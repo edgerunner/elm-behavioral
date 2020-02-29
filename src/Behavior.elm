@@ -60,6 +60,35 @@ log (State _ eventLog) =
     eventLog
 
 
+block : e -> Behavior e
+block expected =
+    Block
+        (\received ->
+            if expected == received then
+                Blocked
+
+            else
+                Free
+        )
+
+
+request : e -> Threads e -> Behavior e
+request =
+    Request
+
+
+wait : e -> Threads e -> Behavior e
+wait expected next =
+    Wait
+        (\received ->
+            if expected == received then
+                Continue next
+
+            else
+                Pause
+        )
+
+
 
 -- PRIVATE HELPERS
 
