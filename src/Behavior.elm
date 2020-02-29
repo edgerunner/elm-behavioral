@@ -51,8 +51,13 @@ run state =
 
 
 fire : e -> State e -> State e
-fire event (State threads log) =
-    State (singleRequestThread event :: threads) log |> run
+fire event (State threads eventLog) =
+    State (singleRequestThread event :: threads) eventLog |> run
+
+
+log : State e -> List e
+log (State _ eventLog) =
+    eventLog
 
 
 
@@ -65,10 +70,10 @@ singleRequestThread event () =
 
 
 applyEvent : e -> State e -> State e
-applyEvent event (State threads log) =
+applyEvent event (State threads eventLog) =
     threads
         |> List.concatMap (runBehaviors event)
-        |> (\newThreads -> State newThreads (event :: log))
+        |> (\newThreads -> State newThreads (event :: eventLog))
 
 
 runBehaviors : e -> Thread e -> Threads e
