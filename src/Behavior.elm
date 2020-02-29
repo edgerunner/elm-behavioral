@@ -1,18 +1,22 @@
 module Behavior exposing (..)
 
 
-type alias Thread f e =
-    f -> List (Behavior f e)
+type alias Thread e =
+    () -> List (Behavior e)
 
 
-type Behavior f e
-    = Request e (List f)
-    | Wait (e -> WaitResult f)
+type alias Threads e =
+    List (Thread e)
+
+
+type Behavior e
+    = Request e (Threads e)
+    | Wait (e -> WaitResult e)
     | Block (e -> BlockResult)
 
 
-type WaitResult f
-    = Continue (List f)
+type WaitResult e
+    = Continue (Threads e)
     | Pause
 
 
@@ -21,23 +25,23 @@ type BlockResult
     | Free
 
 
-type State f e
-    = State (List ( Thread f e, f )) (List e)
+type State e
+    = State (Threads e) (List e)
 
 
 
 -- PUBLIC API
 
 
-initialize : List ( Thread f e, f ) -> State f e
+initialize : Threads e -> State e
 initialize threads =
     State threads []
         |> run
 
 
-run : State f e -> State f e
+run : State e -> State e
 run state =
-    case selectEvent (Debug.log "run" state) of
+    case selectEvent state of
         Nothing ->
             state
 
@@ -46,22 +50,32 @@ run state =
                 |> run
 
 
+fire : e -> State e -> State e
+fire event (State threads log) =
+    State (singleRequestThread event :: threads) log |> run
+
+
 
 -- PRIVATE HELPERS
 
 
-applyEvent : e -> State f e -> State f e
+singleRequestThread : e -> Thread e
+singleRequestThread event () =
+    [ Request event [] ]
+
+
+applyEvent : e -> State e -> State e
 applyEvent event (State threads log) =
     threads
-        |> List.concatMap (runBehaviors (Debug.log "event" event))
+        |> List.concatMap (runBehaviors event)
         |> (\newThreads -> State newThreads (event :: log))
 
 
-runBehaviors : e -> ( Thread f e, f ) -> List ( Thread f e, f )
-runBehaviors event ( thread, fiber ) =
+runBehaviors : e -> Thread e -> Threads e
+runBehaviors event thread =
     let
         behaviors =
-            thread fiber |> Debug.log "behaviors"
+            thread ()
 
         results =
             List.map (runBehavior event) behaviors
@@ -69,30 +83,30 @@ runBehaviors event ( thread, fiber ) =
         unchanged =
             List.all ((==) Nothing) results
 
-        newFibers =
+        newThreads =
             List.concatMap (Maybe.withDefault []) results
     in
     if unchanged then
-        [ ( thread, fiber ) ]
+        [ thread ]
 
     else
-        List.map (\nextFiber -> ( thread, nextFiber )) newFibers
+        newThreads
 
 
-runBehavior : e -> Behavior f e -> Maybe (List f)
+runBehavior : e -> Behavior e -> Maybe (Threads e)
 runBehavior event behavior =
     case behavior of
-        Request e fibers ->
+        Request e threads ->
             if event == e then
-                Just fibers
+                Just threads
 
             else
                 Nothing
 
         Wait fn ->
             case fn event of
-                Continue fibers ->
-                    Just fibers
+                Continue threads ->
+                    Just threads
 
                 Pause ->
                     Nothing
@@ -101,7 +115,7 @@ runBehavior event behavior =
             Nothing
 
 
-blockChain : List ( Thread f e, f ) -> e -> Maybe e
+blockChain : Threads e -> e -> Maybe e
 blockChain threads =
     let
         chainable fn =
@@ -123,13 +137,12 @@ blockChain threads =
                     Nothing
     in
     threads
-        |> List.map applyLeft
-        |> List.concatMap Tuple.second
+        |> List.concatMap invoke
         |> List.filterMap onlyBlocks
         |> List.foldl (<<) Just
 
 
-selectEvent : State f e -> Maybe e
+selectEvent : State e -> Maybe e
 selectEvent (State threads _) =
     let
         blocks =
@@ -137,10 +150,10 @@ selectEvent (State threads _) =
 
         requestedEvents =
             threads
-                |> List.concatMap (Tuple.second << applyLeft)
-                |> List.filterMap onlyRequestEvents
+                |> List.concatMap invoke
+                |> List.filterMap onlyRequests
 
-        onlyRequestEvents behavior =
+        onlyRequests behavior =
             case behavior of
                 Request evt _ ->
                     Just evt
@@ -159,6 +172,11 @@ selectEvent (State threads _) =
 applyLeft : ( a -> b, a ) -> ( a -> b, b )
 applyLeft ( func, param ) =
     ( func, func param )
+
+
+invoke : (() -> a) -> a
+invoke fn =
+    fn ()
 
 
 annexLeft : ( a, List b ) -> List ( a, b )
