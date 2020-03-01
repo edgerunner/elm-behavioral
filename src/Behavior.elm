@@ -255,28 +255,9 @@ selectEvent (State threads _) =
 -- GENERIC HELPERS
 
 
-applyLeft : ( a -> b, a ) -> ( a -> b, b )
-applyLeft ( func, param ) =
-    ( func, func param )
-
-
 invoke : (() -> a) -> a
 invoke fn =
     fn ()
-
-
-annexLeft : ( a, List b ) -> List ( a, b )
-annexLeft ( a, list ) =
-    List.map (\b -> ( a, b )) list
-
-
-maybeIf : a -> Bool -> Maybe a
-maybeIf item predicate =
-    if predicate then
-        Just item
-
-    else
-        Nothing
 
 
 firstWith : (a -> Maybe a) -> List a -> Maybe a
