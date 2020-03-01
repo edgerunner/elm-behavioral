@@ -239,6 +239,66 @@ oPrefersCenter _ =
     ]
 
 
+oDefendsTriplets : List (Thread GameEvent)
+oDefendsTriplets =
+    winningTriplets
+        |> List.map tripletDefense1
+
+
+tripletDefense1 : ( Cell, Cell, Cell ) -> Thread GameEvent
+tripletDefense1 ( c1, c2, c3 ) _ =
+    [ waitFor (Play X c1) [ tripletDefense2 ( c2, c3 ) ]
+    , waitFor (Play X c2) [ tripletDefense2 ( c1, c3 ) ]
+    , waitFor (Play X c3) [ tripletDefense2 ( c1, c2 ) ]
+    ]
+
+
+tripletDefense2 : ( Cell, Cell ) -> Thread GameEvent
+tripletDefense2 ( c1, c2 ) _ =
+    [ waitFor (Play X c1) [ tripletDefense3 c2 ]
+    , waitFor (Play X c2) [ tripletDefense3 c1 ]
+    , waitFor (Play O c1) []
+    , waitFor (Play O c2) []
+    ]
+
+
+tripletDefense3 : Cell -> Thread GameEvent
+tripletDefense3 cell _ =
+    let
+        allOthers event =
+            case event of
+                Play O c ->
+                    if c == cell then
+                        Free
+
+                    else
+                        Blocked
+
+                _ ->
+                    Free
+    in
+    [ request (Play O cell) []
+    , block allOthers
+    ]
+
+
+automatedO : List (Thread GameEvent)
+automatedO =
+    oPlaysAnywhere :: oPrefersCenter :: oDefendsTriplets
+
+
+
+-- Test utilities
+
+
+expectLastEvent : GameEvent -> State GameEvent -> Expect.Expectation
+expectLastEvent event state =
+    state
+        |> log
+        |> List.head
+        |> Expect.equal (Just event)
+
+
 
 -- Actual testing
 
@@ -282,9 +342,7 @@ game =
                     |> fire (Click Top)
                     |> fire (Click Right)
                     |> fire (Click Bottom)
-                    |> log
-                    |> List.head
-                    |> Expect.equal (Just <| Win X)
+                    |> expectLastEvent (Win X)
         , test "O can play a diagonal and win" <|
             \_ ->
                 initialize initialState
@@ -294,9 +352,7 @@ game =
                     |> fire (Click TopLeft)
                     |> fire (Click Bottom)
                     |> fire (Click BottomRight)
-                    |> log
-                    |> List.head
-                    |> Expect.equal (Just <| Win O)
+                    |> expectLastEvent (Win O)
         , test "running out of space before a win is a tie" <|
             \_ ->
                 initialize initialState
@@ -309,9 +365,7 @@ game =
                     |> fire (Click Left)
                     |> fire (Click Right)
                     |> fire (Click BottomRight)
-                    |> log
-                    |> List.head
-                    |> Expect.equal (Just Tie)
+                    |> expectLastEvent Tie
         , test "playing is not possible after a win. " <|
             \_ ->
                 initialize initialState
@@ -321,9 +375,7 @@ game =
                     |> fire (Click Right)
                     |> fire (Click Bottom)
                     |> fire (Click BottomLeft)
-                    |> log
-                    |> List.head
-                    |> Expect.equal (Just <| Click BottomLeft)
+                    |> expectLastEvent (Click BottomLeft)
         ]
 
 
@@ -332,7 +384,7 @@ singlePlayerGame =
     describe "Single player game with autonomous O"
         [ test "plays in any available cell" <|
             \_ ->
-                initialize (oPlaysAnywhere :: initialState)
+                initialize (automatedO ++ initialState)
                     |> fire (Click TopRight)
                     |> fire (Click Left)
                     |> log
@@ -349,10 +401,17 @@ singlePlayerGame =
                     |> Expect.equal 2
         , test "starts in the center if available" <|
             \_ ->
-                initialize (oPlaysAnywhere :: oPrefersCenter :: initialState)
+                initialize (automatedO ++ initialState)
                     |> fire (Click TopRight)
+                    |> expectLastEvent (Play O Center)
+        , test "prevents X from completing a triplet" <|
+            \_ ->
+                initialize (automatedO ++ initialState)
+                    |> fire (Play X Center)
+                    |> fireOne [ Play X Left, Play X Right ]
+                    |> fireOne [ Play X Left, Play X Right ]
                     |> log
                     |> List.head
-                    |> Expect.equal
-                        (Just <| Play O Center)
+                    |> Expect.notEqual
+                        (Just <| Win X)
         ]
