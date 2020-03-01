@@ -60,18 +60,6 @@ log (State _ eventLog) =
     eventLog
 
 
-block : e -> Behavior e
-block expected =
-    Block
-        (\received ->
-            if expected == received then
-                Blocked
-
-            else
-                Free
-        )
-
-
 request : e -> Threads e -> Behavior e
 request =
     Request
@@ -87,6 +75,23 @@ wait expected next =
             else
                 Pause
         )
+
+
+block : e -> Behavior e
+block expected =
+    Block
+        (\received ->
+            if expected == received then
+                Blocked
+
+            else
+                Free
+        )
+
+
+andThen : Behavior e -> Thread e
+andThen behavior () =
+    [ behavior ]
 
 
 
