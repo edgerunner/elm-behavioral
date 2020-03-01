@@ -19,15 +19,10 @@ add event duration _ =
         []
 
 
-mix : Thread TapEvent
-mix _ =
-    [ block Hot
-    , wait Cold
-        [ \_ ->
-            [ block Cold
-            , wait Hot [ mix ]
-            ]
-        ]
+mix : TapEvent -> TapEvent -> Thread TapEvent
+mix tap1 tap2 _ =
+    [ block tap1
+    , wait tap2 [ mix tap2 tap1 ]
     ]
 
 
@@ -48,7 +43,7 @@ suite =
                         [ Hot, Hot, Hot, Cold, Cold, Cold ]
         , test "adding cold and hot water with a mixer" <|
             \_ ->
-                initialize [ add Cold 3, add Hot 3, mix ]
+                initialize [ add Cold 3, add Hot 3, mix Hot Cold ]
                     |> log
                     |> Expect.equalLists
                         [ Hot, Cold, Hot, Cold, Hot, Cold ]
