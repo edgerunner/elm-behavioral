@@ -1,4 +1,20 @@
-module Behavior exposing (..)
+module Behavior exposing
+    ( Behavior
+    , BlockResult(..)
+    , State
+    , Thread
+    , WaitResult(..)
+    , andThen
+    , block
+    , blockEvent
+    , fire
+    , initialize
+    , log
+    , request
+    , run
+    , wait
+    , waitFor
+    )
 
 
 type alias Thread e =
@@ -65,8 +81,8 @@ request =
     Request
 
 
-wait : e -> Threads e -> Behavior e
-wait expected next =
+waitFor : e -> Threads e -> Behavior e
+waitFor expected next =
     Wait
         (\received ->
             if expected == received then
@@ -77,8 +93,13 @@ wait expected next =
         )
 
 
-block : e -> Behavior e
-block expected =
+wait : (e -> WaitResult e) -> Behavior e
+wait =
+    Wait
+
+
+blockEvent : e -> Behavior e
+blockEvent expected =
     Block
         (\received ->
             if expected == received then
@@ -87,6 +108,11 @@ block expected =
             else
                 Free
         )
+
+
+block : (e -> BlockResult) -> Behavior e
+block =
+    Block
 
 
 andThen : Behavior e -> Thread e

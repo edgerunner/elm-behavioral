@@ -41,7 +41,7 @@ firstTemplate invoice =
 
 sendInvoices : Thread InvoicingEvent
 sendInvoices _ =
-    [ Wait
+    [ wait
         (\event ->
             case event of
                 Prepared invoice ->
@@ -58,7 +58,7 @@ sendInvoices _ =
 
 firstInvoicesUseDifferentTemplate : Set String -> Thread InvoicingEvent
 firstInvoicesUseDifferentTemplate previous _ =
-    [ Wait
+    [ wait
         (\event ->
             case event of
                 Prepared invoice ->
@@ -68,7 +68,7 @@ firstInvoicesUseDifferentTemplate previous _ =
                     else
                         Continue
                             [ andThen <| request (Sent <| firstTemplate invoice) []
-                            , andThen <| block (Sent <| defaultTemplate invoice)
+                            , andThen <| blockEvent (Sent <| defaultTemplate invoice)
                             , firstInvoicesUseDifferentTemplate (Set.insert invoice.recipient previous)
                             ]
 

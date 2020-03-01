@@ -13,7 +13,7 @@ type TapEvent
 add : TapEvent -> Int -> Thread TapEvent
 add event duration _ =
     if duration > 0 then
-        [ Request event [ add event (duration - 1) ] ]
+        [ request event [ add event (duration - 1) ] ]
 
     else
         []
@@ -21,8 +21,8 @@ add event duration _ =
 
 mix : TapEvent -> TapEvent -> Thread TapEvent
 mix tap1 tap2 _ =
-    [ block tap1
-    , wait tap2 [ mix tap2 tap1 ]
+    [ blockEvent tap1
+    , waitFor tap2 [ mix tap2 tap1 ]
     ]
 
 
