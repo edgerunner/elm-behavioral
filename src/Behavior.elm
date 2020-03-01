@@ -8,6 +8,8 @@ module Behavior exposing
     , block
     , blockEvent
     , fire
+    , fireAll
+    , fireOne
     , initialize
     , log
     , request
@@ -69,6 +71,25 @@ run state =
 fire : e -> State e -> State e
 fire event (State threads eventLog) =
     State (singleRequestThread event :: threads) eventLog |> run
+
+
+fireOne : List e -> State e -> State e
+fireOne events (State threads eventLog) =
+    let
+        thread _ =
+            events
+                |> List.map ((<|) Request >> (|>) [])
+    in
+    State (thread :: threads) eventLog |> run
+
+
+fireAll : List e -> State e -> State e
+fireAll events (State threads eventLog) =
+    let
+        newThreads =
+            List.map singleRequestThread events
+    in
+    State (newThreads ++ threads) eventLog |> run
 
 
 log : State e -> List e
