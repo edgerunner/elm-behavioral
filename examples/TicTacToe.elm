@@ -211,11 +211,15 @@ initialState =
 -- Autonomous O
 
 
-oPlaysAnywhere : Thread GameEvent
-oPlaysAnywhere _ =
-    allCells
-        |> List.map (request << Play O)
-        |> List.map ((|>) [ oPlaysAnywhere ])
+oPlaysAnywhere : List (Thread GameEvent)
+oPlaysAnywhere =
+    let
+        anywhere cell _ =
+            [ request (Play O cell) []
+            , waitFor (Play X cell) []
+            ]
+    in
+    List.map anywhere allCells
 
 
 oPrefersCenter : Thread GameEvent
@@ -248,6 +252,9 @@ tripletDefense1 ( c1, c2, c3 ) _ =
     [ waitFor (Play X c1) [ tripletDefense2 ( c2, c3 ) ]
     , waitFor (Play X c2) [ tripletDefense2 ( c1, c3 ) ]
     , waitFor (Play X c3) [ tripletDefense2 ( c1, c2 ) ]
+    , waitFor (Play O c1) []
+    , waitFor (Play O c2) []
+    , waitFor (Play O c3) []
     ]
 
 
@@ -262,24 +269,15 @@ tripletDefense2 ( c1, c2 ) _ =
 
 tripletDefense3 : Cell -> Thread GameEvent
 tripletDefense3 cell _ =
-    let
-        allOthers event =
-            case event of
-                Play O c ->
-                    if c == cell then
-                        Free
-
-                    else
-                        Blocked
-
-                _ ->
-                    Free
-    in
     [ request (Play O cell) []
-    , block allOthers
+    , waitFor (Play O cell) []
     ]
 
 
 automatedO : List (Thread GameEvent)
 automatedO =
-    oPlaysAnywhere :: oPrefersCenter :: oDefendsTriplets
+    List.concat
+        [ oDefendsTriplets
+        , [ oPrefersCenter ]
+        , oPlaysAnywhere
+        ]
