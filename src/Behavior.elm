@@ -12,6 +12,7 @@ module Behavior exposing
     , fireOne
     , initialize
     , log
+    , pending
     , request
     , run
     , wait
@@ -100,17 +101,31 @@ log (State _ eventLog) =
     eventLog
 
 
+pending : State e -> List e
+pending (State threads _) =
+    List.concatMap ((|>) ()) threads
+        |> List.filterMap
+            (\behavior ->
+                case behavior of
+                    Request event _ ->
+                        Just event
+
+                    _ ->
+                        Nothing
+            )
+
+
 request : e -> Threads e -> Behavior e
 request =
     Request
 
 
 waitFor : e -> Threads e -> Behavior e
-waitFor expected next =
+waitFor expected withNext =
     Wait
         (\received ->
             if expected == received then
-                Continue next
+                Continue withNext
 
             else
                 Pause

@@ -45,6 +45,7 @@ view state =
         [ div [] <| List.map (cell state) [ TopLeft, Top, TopRight ]
         , div [] <| List.map (cell state) [ Left, Center, Right ]
         , div [] <| List.map (cell state) [ BottomLeft, Bottom, BottomRight ]
+        , ol [] <| List.map eventLi (Behavior.pending state)
         , ol [ reversed True ] <| List.map eventLi (Behavior.log state)
         ]
 
