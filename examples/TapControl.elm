@@ -1,4 +1,4 @@
-module TapControl exposing (..)
+module TapControl exposing (TapEvent(..), add, mix)
 
 import Behavior exposing (..)
 

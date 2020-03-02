@@ -1,4 +1,4 @@
-module InvoiceMailingTest exposing (..)
+module InvoiceMailingTest exposing (suite)
 
 import Behavior exposing (..)
 import Expect

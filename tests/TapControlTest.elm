@@ -1,4 +1,4 @@
-module TapControlTest exposing (..)
+module TapControlTest exposing (suite)
 
 import Behavior exposing (..)
 import Expect

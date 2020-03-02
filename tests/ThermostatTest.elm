@@ -1,4 +1,4 @@
-module ThermostatTest exposing (..)
+module ThermostatTest exposing (suite)
 
 import Behavior exposing (..)
 import Expect

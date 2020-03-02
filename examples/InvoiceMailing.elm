@@ -1,12 +1,13 @@
-module InvoiceMailing exposing 
-    ( sendInvoices
-    , firstInvoicesUseDifferentTemplate
+module InvoiceMailing exposing
+    ( Invoice
     , InvoicingEvent(..)
-    , Invoice
+    , firstInvoicesUseDifferentTemplate
+    , sendInvoices
     )
 
 import Behavior exposing (..)
 import Set exposing (Set)
+
 
 type InvoicingEvent
     = Prepared Invoice
