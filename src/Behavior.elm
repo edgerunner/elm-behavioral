@@ -84,12 +84,15 @@ fireOne events (State threads eventLog) =
 
 
 fireAll : List e -> State e -> State e
-fireAll events (State threads eventLog) =
-    let
-        newThreads =
-            List.map singleRequestThread events
-    in
-    State (newThreads ++ threads) eventLog |> run
+fireAll events state =
+    case events of
+        [] ->
+            state
+
+        first :: rest ->
+            state
+                |> fire first
+                |> fireAll rest
 
 
 log : State e -> List e
