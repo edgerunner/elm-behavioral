@@ -40,36 +40,32 @@ init =
 
 view : State -> Html GameEvent
 view state =
+    let
+        ( ( topLeft, top, topRight ), ( left, center, right ), ( bottomLeft, bottom, bottomRight ) ) =
+            marks state
+    in
     div []
-        [ div [] <| List.map (cell state) [ TopLeft, Top, TopRight ]
-        , div [] <| List.map (cell state) [ Left, Center, Right ]
-        , div [] <| List.map (cell state) [ BottomLeft, Bottom, BottomRight ]
+        [ div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
+        , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
+        , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
         , ol [] <| List.map eventLi (Behavior.pending state)
         , ol [ reversed True ] <| List.map eventLi (Behavior.log state)
         ]
 
 
-cell : State -> Cell -> Html GameEvent
-cell state currentCell =
+cell : Cell -> Maybe Player -> Html GameEvent
+cell currentCell player =
     let
         mark =
-            List.foldl playMark "-" (Behavior.log state)
+            case player of
+                Nothing ->
+                    "-"
 
-        playMark event str =
-            case event of
-                Play player eventCell ->
-                    case ( eventCell == currentCell, player ) of
-                        ( True, X ) ->
-                            "X"
+                Just X ->
+                    "X"
 
-                        ( True, O ) ->
-                            "O"
-
-                        _ ->
-                            str
-
-                _ ->
-                    str
+                Just O ->
+                    "O"
     in
     button [ onClick (Click currentCell) ] [ text mark ]
 
@@ -77,3 +73,73 @@ cell state currentCell =
 eventLi : GameEvent -> Html GameEvent
 eventLi event =
     li [] [ text <| Debug.toString event ]
+
+
+type alias RowMarks =
+    ( Maybe Player, Maybe Player, Maybe Player )
+
+
+type alias GridMarks =
+    ( RowMarks, RowMarks, RowMarks )
+
+
+marks : State -> GridMarks
+marks state =
+    let
+        blankGrid : GridMarks
+        blankGrid =
+            ( ( Nothing, Nothing, Nothing )
+            , ( Nothing, Nothing, Nothing )
+            , ( Nothing, Nothing, Nothing )
+            )
+
+        mark event (( top, mid, bottom ) as grid) =
+            case event of
+                Play player cell_ ->
+                    case cell_ of
+                        TopLeft ->
+                            updateFirst (updateFirst (Just player) top) grid
+
+                        Top ->
+                            updateFirst (updateSecond (Just player) top) grid
+
+                        TopRight ->
+                            updateFirst (updateThird (Just player) top) grid
+
+                        Left ->
+                            updateSecond (updateFirst (Just player) mid) grid
+
+                        Center ->
+                            updateSecond (updateSecond (Just player) mid) grid
+
+                        Right ->
+                            updateSecond (updateThird (Just player) mid) grid
+
+                        BottomLeft ->
+                            updateThird (updateFirst (Just player) bottom) grid
+
+                        Bottom ->
+                            updateThird (updateSecond (Just player) bottom) grid
+
+                        BottomRight ->
+                            updateThird (updateThird (Just player) bottom) grid
+
+                _ ->
+                    grid
+    in
+    List.foldl mark blankGrid (Behavior.log state)
+
+
+updateFirst : a -> ( a, a, a ) -> ( a, a, a )
+updateFirst new ( _, b, c ) =
+    ( new, b, c )
+
+
+updateSecond : a -> ( a, a, a ) -> ( a, a, a )
+updateSecond new ( a, _, c ) =
+    ( a, new, c )
+
+
+updateThird : a -> ( a, a, a ) -> ( a, a, a )
+updateThird new ( a, b, _ ) =
+    ( a, b, new )
