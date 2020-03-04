@@ -274,10 +274,42 @@ tripletDefense3 cell _ =
     ]
 
 
+oGoesForWinningMoves : List (Thread GameEvent)
+oGoesForWinningMoves =
+    winningTriplets
+        |> List.map tripletOffense1
+
+
+tripletOffense1 : ( Cell, Cell, Cell ) -> Thread GameEvent
+tripletOffense1 ( c1, c2, c3 ) _ =
+    [ waitFor (Play O c1) [ tripletOffense2 ( c2, c3 ) ]
+    , waitFor (Play O c2) [ tripletOffense2 ( c1, c3 ) ]
+    , waitFor (Play O c3) [ tripletOffense2 ( c1, c2 ) ]
+    , waitFor (Play X c1) []
+    , waitFor (Play X c2) []
+    , waitFor (Play X c3) []
+    ]
+
+
+tripletOffense2 : ( Cell, Cell ) -> Thread GameEvent
+tripletOffense2 ( c1, c2 ) _ =
+    [ waitFor (Play O c1) [ tripletOffense3 c2 ]
+    , waitFor (Play O c2) [ tripletOffense3 c1 ]
+    , waitFor (Play X c1) []
+    , waitFor (Play X c2) []
+    ]
+
+
+tripletOffense3 : Cell -> Thread GameEvent
+tripletOffense3 cell _ =
+    [ request (Play O cell) [] ]
+
+
 automatedO : List (Thread GameEvent)
 automatedO =
     List.concat
-        [ oDefendsTriplets
+        [ oGoesForWinningMoves
+        , oDefendsTriplets
         , [ oPrefersCenter ]
         , oPlaysAnywhere
         ]
