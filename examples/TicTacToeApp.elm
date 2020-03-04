@@ -1,7 +1,7 @@
 module TicTacToeApp exposing (main)
 
 import Behavior
-import Browser
+import Behavior.Program
 import Html exposing (Html, button, div, li, ol, text)
 import Html.Attributes exposing (reversed)
 import Html.Events exposing (onClick)
@@ -14,10 +14,9 @@ import TicTacToe exposing (..)
 
 main : Program () State GameEvent
 main =
-    Browser.sandbox
+    Behavior.Program.sandbox
         { init = init
         , view = view
-        , update = Behavior.fire
         }
 
 
