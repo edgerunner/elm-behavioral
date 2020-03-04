@@ -45,7 +45,8 @@ view state =
             marks state
     in
     div []
-        [ div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
+        [ Html.node "style" [] [ text css ]
+        , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
         , ol [] <| List.map eventLi (Behavior.pending state)
@@ -143,3 +144,39 @@ updateSecond new ( a, _, c ) =
 updateThird : a -> ( a, a, a ) -> ( a, a, a )
 updateThird new ( a, b, _ ) =
     ( a, b, new )
+
+
+css : String
+css =
+    [ "body > div > div {"
+    , "    display: contents;"
+    , "}"
+    , "body > div {"
+    , "    display: grid;"
+    , "    grid-template-columns: repeat(6,3rem);"
+    , "    grid-template-rows: repeat(3,6rem) 1fr;"
+    , "    padding: .5em;"
+    , "    gap: .5em;"
+    , "    background-color: coral;"
+    , "    justify-content: center;"
+    , "}"
+    , "button {"
+    , "    grid-column: span 2;"
+    , "    font-size: 3rem;"
+    , "    background: white;"
+    , "    border: none;"
+    , "}"
+    , "ol {"
+    , "    grid-column: span 3;"
+    , "}"
+    , "ol:nth-of-type(1)::before {"
+    , "    content: 'Pending requests';"
+    , "}"
+    , "ol:nth-of-type(2)::before {"
+    , "    content: 'Event log';"
+    , "}"
+    , "ol::before {"
+    , "    font-size: .8em"
+    , "}"
+    ]
+        |> String.join "\n"
