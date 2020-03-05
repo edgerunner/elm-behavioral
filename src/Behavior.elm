@@ -13,6 +13,7 @@ module Behavior exposing
     , initialize
     , log
     , pending
+    , recent
     , request
     , run
     , wait
@@ -45,7 +46,11 @@ type BlockResult
 
 
 type State e
-    = State (Threads e) (List e)
+    = State (Threads e) (List e) LastRun
+
+
+type alias LastRun =
+    Int
 
 
 
@@ -54,7 +59,7 @@ type State e
 
 initialize : Threads e -> State e
 initialize threads =
-    State threads []
+    State threads [] 0
         |> run
 
 
@@ -70,18 +75,18 @@ run state =
 
 
 fire : e -> State e -> State e
-fire event (State threads eventLog) =
-    State (singleRequestThread event :: threads) eventLog |> run
+fire event (State threads eventLog _) =
+    State (singleRequestThread event :: threads) eventLog 0 |> run
 
 
 fireOne : List e -> State e -> State e
-fireOne events (State threads eventLog) =
+fireOne events (State threads eventLog _) =
     let
         thread _ =
             events
                 |> List.map ((<|) Request >> (|>) [])
     in
-    State (thread :: threads) eventLog |> run
+    State (thread :: threads) eventLog 0 |> run
 
 
 fireAll : List e -> State e -> State e
@@ -97,12 +102,17 @@ fireAll events state =
 
 
 log : State e -> List e
-log (State _ eventLog) =
+log (State _ eventLog _) =
     eventLog
 
 
+recent : State e -> List e
+recent (State _ eventLog lastRun) =
+    List.take lastRun eventLog
+
+
 pending : State e -> List e
-pending (State threads _) =
+pending (State threads _ _) =
     List.concatMap ((|>) ()) threads
         |> List.filterMap
             (\behavior ->
@@ -169,10 +179,10 @@ singleRequestThread event () =
 
 
 applyEvent : e -> State e -> State e
-applyEvent event (State threads eventLog) =
+applyEvent event (State threads eventLog lastRun) =
     threads
         |> List.concatMap (runBehaviors event)
-        |> (\newThreads -> State newThreads (event :: eventLog))
+        |> (\newThreads -> State newThreads (event :: eventLog) (lastRun + 1))
 
 
 runBehaviors : e -> Thread e -> Threads e
@@ -247,7 +257,7 @@ blockChain threads =
 
 
 selectEvent : State e -> Maybe e
-selectEvent (State threads _) =
+selectEvent (State threads _ _) =
     let
         blocks =
             blockChain threads
