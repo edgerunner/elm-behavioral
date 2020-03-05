@@ -12,11 +12,12 @@ import TicTacToe exposing (..)
 -- PROGRAM
 
 
-main : Program () State GameEvent
+main : Program () StateAndGrid GameEvent
 main =
-    Behavior.Program.sandbox
+    Behavior.Program.dualSandbox
         { init = init
         , view = view
+        , update = update
         }
 
 
@@ -24,25 +25,91 @@ main =
 -- MODEL
 
 
-type alias State =
-    Behavior.State GameEvent
+type alias StateAndGrid =
+    ( Behavior.State GameEvent, GridMarks )
 
 
-init : State
-init =
+type alias RowMarks =
+    ( Maybe Player, Maybe Player, Maybe Player )
+
+
+type alias GridMarks =
+    ( RowMarks, RowMarks, RowMarks )
+
+
+blankGrid : GridMarks
+blankGrid =
+    ( ( Nothing, Nothing, Nothing )
+    , ( Nothing, Nothing, Nothing )
+    , ( Nothing, Nothing, Nothing )
+    )
+
+
+behavior : Behavior.State GameEvent
+behavior =
     Behavior.initialize
         (automatedO ++ initialState)
+
+
+init : StateAndGrid
+init =
+    ( behavior, blankGrid )
+
+
+
+-- UPDATE
+
+
+update : Behavior.State GameEvent -> GridMarks -> GridMarks
+update state grid =
+    List.foldl mark grid (Behavior.recent state)
+
+
+mark : GameEvent -> GridMarks -> GridMarks
+mark event (( top, mid, bottom ) as grid) =
+    case event of
+        Play player cell_ ->
+            case cell_ of
+                TopLeft ->
+                    updateFirst (updateFirst (Just player) top) grid
+
+                Top ->
+                    updateFirst (updateSecond (Just player) top) grid
+
+                TopRight ->
+                    updateFirst (updateThird (Just player) top) grid
+
+                Left ->
+                    updateSecond (updateFirst (Just player) mid) grid
+
+                Center ->
+                    updateSecond (updateSecond (Just player) mid) grid
+
+                Right ->
+                    updateSecond (updateThird (Just player) mid) grid
+
+                BottomLeft ->
+                    updateThird (updateFirst (Just player) bottom) grid
+
+                Bottom ->
+                    updateThird (updateSecond (Just player) bottom) grid
+
+                BottomRight ->
+                    updateThird (updateThird (Just player) bottom) grid
+
+        _ ->
+            grid
 
 
 
 -- VIEW
 
 
-view : State -> Html GameEvent
-view state =
+view : StateAndGrid -> Html GameEvent
+view ( state, grid ) =
     let
         ( ( topLeft, top, topRight ), ( left, center, right ), ( bottomLeft, bottom, bottomRight ) ) =
-            marks state
+            grid
     in
     div []
         [ Html.node "style" [] [ text css ]
@@ -57,7 +124,7 @@ view state =
 cell : Cell -> Maybe Player -> Html GameEvent
 cell currentCell player =
     let
-        mark =
+        markChar =
             case player of
                 Nothing ->
                     "-"
@@ -68,67 +135,12 @@ cell currentCell player =
                 Just O ->
                     "O"
     in
-    button [ onClick (Click currentCell) ] [ text mark ]
+    button [ onClick (Click currentCell) ] [ text markChar ]
 
 
 eventLi : GameEvent -> Html GameEvent
 eventLi event =
     li [] [ text <| Debug.toString event ]
-
-
-type alias RowMarks =
-    ( Maybe Player, Maybe Player, Maybe Player )
-
-
-type alias GridMarks =
-    ( RowMarks, RowMarks, RowMarks )
-
-
-marks : State -> GridMarks
-marks state =
-    let
-        blankGrid : GridMarks
-        blankGrid =
-            ( ( Nothing, Nothing, Nothing )
-            , ( Nothing, Nothing, Nothing )
-            , ( Nothing, Nothing, Nothing )
-            )
-
-        mark event (( top, mid, bottom ) as grid) =
-            case event of
-                Play player cell_ ->
-                    case cell_ of
-                        TopLeft ->
-                            updateFirst (updateFirst (Just player) top) grid
-
-                        Top ->
-                            updateFirst (updateSecond (Just player) top) grid
-
-                        TopRight ->
-                            updateFirst (updateThird (Just player) top) grid
-
-                        Left ->
-                            updateSecond (updateFirst (Just player) mid) grid
-
-                        Center ->
-                            updateSecond (updateSecond (Just player) mid) grid
-
-                        Right ->
-                            updateSecond (updateThird (Just player) mid) grid
-
-                        BottomLeft ->
-                            updateThird (updateFirst (Just player) bottom) grid
-
-                        Bottom ->
-                            updateThird (updateSecond (Just player) bottom) grid
-
-                        BottomRight ->
-                            updateThird (updateThird (Just player) bottom) grid
-
-                _ ->
-                    grid
-    in
-    List.foldl mark blankGrid (Behavior.log state)
 
 
 updateFirst : a -> ( a, a, a ) -> ( a, a, a )
