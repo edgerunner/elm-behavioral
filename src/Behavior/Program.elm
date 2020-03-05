@@ -1,45 +1,39 @@
-module Behavior.Program exposing (dualSandbox, sandbox)
+module Behavior.Program exposing (sandbox)
 
-import Behavior exposing (State, fire)
+import Behavior exposing (State)
 import Browser
 import Html exposing (Html)
 
 
 sandbox :
-    { init : State event
-    , view : State event -> Html event
-    }
-    -> Program () (State event) event
-sandbox record =
-    Browser.sandbox
-        { init = record.init
-        , view = record.view
-        , update = fire
-        }
-
-
-dualSandbox :
-    { init : ( State event, model )
-    , view : ( State event, model ) -> Html event
-    , update : State event -> model -> model
+    { init : model
+    , behavior : State event
+    , reduce : event -> model -> model
+    , view : model -> Html event
     }
     -> Program () ( State event, model ) event
-dualSandbox record =
+sandbox record =
     Browser.sandbox
-        { init = record.init
-        , view = record.view
-        , update = updateDualSandbox record.update
+        { init = ( record.behavior, record.init )
+        , view = record.view << Tuple.second
+        , update = updateSandbox record.reduce
         }
 
 
-updateDualSandbox :
-    (State event -> model -> model)
+updateSandbox :
+    (event -> model -> model)
     -> event
     -> ( State event, model )
     -> ( State event, model )
-updateDualSandbox update event ( oldState, model ) =
+updateSandbox reduce event ( state, model ) =
     let
         newState =
-            fire event oldState
+            Behavior.fire event state
+
+        recentEvents =
+            Behavior.recent newState
+
+        updatedModel =
+            List.foldl reduce model recentEvents
     in
-    ( newState, update newState model )
+    ( newState, updatedModel )

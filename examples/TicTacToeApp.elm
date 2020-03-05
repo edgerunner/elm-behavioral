@@ -2,8 +2,7 @@ module TicTacToeApp exposing (main)
 
 import Behavior
 import Behavior.Program
-import Html exposing (Html, button, div, li, ol, text)
-import Html.Attributes exposing (reversed)
+import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
 import TicTacToe exposing (..)
 
@@ -14,10 +13,11 @@ import TicTacToe exposing (..)
 
 main : Program () StateAndGrid GameEvent
 main =
-    Behavior.Program.dualSandbox
+    Behavior.Program.sandbox
         { init = init
         , view = view
-        , update = update
+        , behavior = behavior
+        , reduce = reduce
         }
 
 
@@ -51,22 +51,17 @@ behavior =
         (automatedO ++ initialState)
 
 
-init : StateAndGrid
+init : GridMarks
 init =
-    ( behavior, blankGrid )
+    blankGrid
 
 
 
 -- UPDATE
 
 
-update : Behavior.State GameEvent -> GridMarks -> GridMarks
-update state grid =
-    List.foldl mark grid (Behavior.recent state)
-
-
-mark : GameEvent -> GridMarks -> GridMarks
-mark event (( top, mid, bottom ) as grid) =
+reduce : GameEvent -> GridMarks -> GridMarks
+reduce event (( top, mid, bottom ) as grid) =
     case event of
         Play player cell_ ->
             case cell_ of
@@ -105,8 +100,8 @@ mark event (( top, mid, bottom ) as grid) =
 -- VIEW
 
 
-view : StateAndGrid -> Html GameEvent
-view ( state, grid ) =
+view : GridMarks -> Html GameEvent
+view grid =
     let
         ( ( topLeft, top, topRight ), ( left, center, right ), ( bottomLeft, bottom, bottomRight ) ) =
             grid
@@ -116,8 +111,6 @@ view ( state, grid ) =
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
-        , ol [] <| List.map eventLi (Behavior.pending state)
-        , ol [ reversed True ] <| List.map eventLi (Behavior.log state)
         ]
 
 
@@ -136,11 +129,6 @@ cell currentCell player =
                     "O"
     in
     button [ onClick (Click currentCell) ] [ text markChar ]
-
-
-eventLi : GameEvent -> Html GameEvent
-eventLi event =
-    li [] [ text <| Debug.toString event ]
 
 
 updateFirst : a -> ( a, a, a ) -> ( a, a, a )
@@ -165,30 +153,17 @@ css =
     , "}"
     , "body > div {"
     , "    display: grid;"
-    , "    grid-template-columns: repeat(6,3rem);"
-    , "    grid-template-rows: repeat(3,6rem) 1fr;"
+    , "    grid-template-columns: repeat(3,6rem);"
+    , "    grid-template-rows: repeat(3,6rem);"
     , "    padding: .5em;"
     , "    gap: .5em;"
     , "    background-color: coral;"
     , "    justify-content: center;"
     , "}"
     , "button {"
-    , "    grid-column: span 2;"
     , "    font-size: 3rem;"
     , "    background: white;"
     , "    border: none;"
-    , "}"
-    , "ol {"
-    , "    grid-column: span 3;"
-    , "}"
-    , "ol:nth-of-type(1)::before {"
-    , "    content: 'Pending requests';"
-    , "}"
-    , "ol:nth-of-type(2)::before {"
-    , "    content: 'Event log';"
-    , "}"
-    , "ol::before {"
-    , "    font-size: .8em"
     , "}"
     ]
         |> String.join "\n"
