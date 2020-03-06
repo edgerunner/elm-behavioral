@@ -34,6 +34,6 @@ updateSandbox reduce event ( state, model ) =
             Behavior.recent newState
 
         updatedModel =
-            List.foldl reduce model recentEvents
+            List.foldr reduce model recentEvents
     in
     ( newState, updatedModel )
