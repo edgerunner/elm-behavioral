@@ -3,6 +3,7 @@ module TicTacToeApp exposing (main)
 import Behavior
 import Behavior.Program
 import Html exposing (Html, button, div, text)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import TicTacToe exposing (..)
 
@@ -29,8 +30,18 @@ type alias StateAndGrid =
     ( Behavior.State GameEvent, GridMarks )
 
 
+type CellMark
+    = Blank
+    | Marked Player Highlight
+
+
+type Highlight
+    = Plain
+    | Highlighted
+
+
 type alias RowMarks =
-    ( Maybe Player, Maybe Player, Maybe Player )
+    ( CellMark, CellMark, CellMark )
 
 
 type alias GridMarks =
@@ -39,9 +50,9 @@ type alias GridMarks =
 
 blankGrid : GridMarks
 blankGrid =
-    ( ( Nothing, Nothing, Nothing )
-    , ( Nothing, Nothing, Nothing )
-    , ( Nothing, Nothing, Nothing )
+    ( ( Blank, Blank, Blank )
+    , ( Blank, Blank, Blank )
+    , ( Blank, Blank, Blank )
     )
 
 
@@ -61,36 +72,16 @@ init =
 
 
 reduce : GameEvent -> GridMarks -> GridMarks
-reduce event (( top, mid, bottom ) as grid) =
+reduce event grid =
     case event of
         Play player cell_ ->
-            case cell_ of
-                TopLeft ->
-                    updateFirst (updateFirst (Just player) top) grid
+            updateGrid (always <| Marked player Plain) cell_ grid
 
-                Top ->
-                    updateFirst (updateSecond (Just player) top) grid
-
-                TopRight ->
-                    updateFirst (updateThird (Just player) top) grid
-
-                Left ->
-                    updateSecond (updateFirst (Just player) mid) grid
-
-                Center ->
-                    updateSecond (updateSecond (Just player) mid) grid
-
-                Right ->
-                    updateSecond (updateThird (Just player) mid) grid
-
-                BottomLeft ->
-                    updateThird (updateFirst (Just player) bottom) grid
-
-                Bottom ->
-                    updateThird (updateSecond (Just player) bottom) grid
-
-                BottomRight ->
-                    updateThird (updateThird (Just player) bottom) grid
+        Win player c1 c2 c3 ->
+            grid
+                |> updateGrid (always <| Marked player Highlighted) c1
+                |> updateGrid (always <| Marked player Highlighted) c2
+                |> updateGrid (always <| Marked player Highlighted) c3
 
         _ ->
             grid
@@ -114,56 +105,102 @@ view grid =
         ]
 
 
-cell : Cell -> Maybe Player -> Html GameEvent
-cell currentCell player =
+cell : Cell -> CellMark -> Html GameEvent
+cell currentCell cellMark =
     let
         markChar =
-            case player of
-                Nothing ->
+            case cellMark of
+                Blank ->
                     "-"
 
-                Just X ->
+                Marked X _ ->
                     "X"
 
-                Just O ->
+                Marked O _ ->
                     "O"
+
+        highlightClass =
+            case cellMark of
+                Blank ->
+                    class "blank"
+
+                Marked _ Plain ->
+                    class "plain"
+
+                Marked _ Highlighted ->
+                    class "highlighted"
     in
-    button [ onClick (Click currentCell) ] [ text markChar ]
+    button [ onClick (Click currentCell), highlightClass ] [ text markChar ]
 
 
-updateFirst : a -> ( a, a, a ) -> ( a, a, a )
-updateFirst new ( _, b, c ) =
-    ( new, b, c )
+updateGrid : (CellMark -> CellMark) -> Cell -> GridMarks -> GridMarks
+updateGrid updater cell_ grid =
+    case cell_ of
+        TopLeft ->
+            updateFirst (\row -> updateFirst updater row) grid
+
+        Top ->
+            updateFirst (\row -> updateSecond updater row) grid
+
+        TopRight ->
+            updateFirst (\row -> updateThird updater row) grid
+
+        Left ->
+            updateSecond (\row -> updateFirst updater row) grid
+
+        Center ->
+            updateSecond (\row -> updateSecond updater row) grid
+
+        Right ->
+            updateSecond (\row -> updateThird updater row) grid
+
+        BottomLeft ->
+            updateThird (\row -> updateFirst updater row) grid
+
+        Bottom ->
+            updateThird (\row -> updateSecond updater row) grid
+
+        BottomRight ->
+            updateThird (\row -> updateThird updater row) grid
 
 
-updateSecond : a -> ( a, a, a ) -> ( a, a, a )
-updateSecond new ( a, _, c ) =
-    ( a, new, c )
+updateFirst : (a -> a) -> ( a, a, a ) -> ( a, a, a )
+updateFirst updater ( a, b, c ) =
+    ( updater a, b, c )
 
 
-updateThird : a -> ( a, a, a ) -> ( a, a, a )
-updateThird new ( a, b, _ ) =
-    ( a, b, new )
+updateSecond : (a -> a) -> ( a, a, a ) -> ( a, a, a )
+updateSecond updater ( a, b, c ) =
+    ( a, updater b, c )
+
+
+updateThird : (a -> a) -> ( a, a, a ) -> ( a, a, a )
+updateThird updater ( a, b, c ) =
+    ( a, b, updater c )
 
 
 css : String
 css =
-    [ "body > div > div {"
-    , "    display: contents;"
-    , "}"
-    , "body > div {"
-    , "    display: grid;"
-    , "    grid-template-columns: repeat(3,6rem);"
-    , "    grid-template-rows: repeat(3,6rem);"
-    , "    padding: .5em;"
-    , "    gap: .5em;"
-    , "    background-color: coral;"
-    , "    justify-content: center;"
-    , "}"
-    , "button {"
-    , "    font-size: 3rem;"
-    , "    background: white;"
-    , "    border: none;"
-    , "}"
-    ]
-        |> String.join "\n"
+    """
+body > div > div {
+    display: contents;
+}
+body > div {
+    display: grid;
+    grid-template-columns: repeat(3,6rem);
+    grid-template-rows: repeat(3,6rem);
+    padding: .5em;
+    gap: .5em;
+    background-color: coral;
+    justify-content: center;
+}
+button {
+    font-size: 3rem;
+    background: white;
+    border: none;
+}
+button.highlighted {
+    background: black;
+    color: white;
+}
+"""

@@ -33,7 +33,7 @@ other player =
 type GameEvent
     = Click Cell
     | Play Player Cell
-    | Win Player
+    | Win Player Cell Cell Cell
     | Tie
 
 
@@ -115,27 +115,27 @@ cellThreads =
 
 detectWin1 : ( Cell, Cell, Cell ) -> Thread GameEvent
 detectWin1 ( c1, c2, c3 ) _ =
-    [ waitFor (Play X c1) [ detectWin2 X ( c2, c3 ) ]
-    , waitFor (Play O c1) [ detectWin2 O ( c2, c3 ) ]
-    , waitFor (Play X c2) [ detectWin2 X ( c1, c3 ) ]
-    , waitFor (Play O c2) [ detectWin2 O ( c1, c3 ) ]
-    , waitFor (Play X c3) [ detectWin2 X ( c2, c1 ) ]
-    , waitFor (Play O c3) [ detectWin2 O ( c2, c1 ) ]
+    [ waitFor (Play X c1) [ detectWin2 X ( c2, c3 ) (Win X c1) ]
+    , waitFor (Play O c1) [ detectWin2 O ( c2, c3 ) (Win O c1) ]
+    , waitFor (Play X c2) [ detectWin2 X ( c1, c3 ) (Win X c2) ]
+    , waitFor (Play O c2) [ detectWin2 O ( c1, c3 ) (Win O c2) ]
+    , waitFor (Play X c3) [ detectWin2 X ( c2, c1 ) (Win X c3) ]
+    , waitFor (Play O c3) [ detectWin2 O ( c2, c1 ) (Win O c3) ]
     ]
 
 
-detectWin2 : Player -> ( Cell, Cell ) -> Thread GameEvent
-detectWin2 player ( c1, c2 ) _ =
-    [ waitFor (Play player c1) [ detectWin3 player c2 ]
-    , waitFor (Play player c2) [ detectWin3 player c1 ]
+detectWin2 : Player -> ( Cell, Cell ) -> (Cell -> Cell -> GameEvent) -> Thread GameEvent
+detectWin2 player ( c1, c2 ) win _ =
+    [ waitFor (Play player c1) [ detectWin3 player c2 (win c1) ]
+    , waitFor (Play player c2) [ detectWin3 player c1 (win c2) ]
     , waitFor (Play (other player) c1) []
     , waitFor (Play (other player) c2) []
     ]
 
 
-detectWin3 : Player -> Cell -> Thread GameEvent
-detectWin3 player cell _ =
-    [ waitFor (Play player cell) [ andThen <| request (Win player) [] ]
+detectWin3 : Player -> Cell -> (Cell -> GameEvent) -> Thread GameEvent
+detectWin3 player cell win _ =
+    [ waitFor (Play player cell) [ andThen <| request (win cell) [] ]
     , waitFor (Play (other player) cell) []
     ]
 
@@ -192,9 +192,18 @@ blockMovesAfterGameOver _ =
                                 Free
                     )
     in
-    [ waitFor Tie [ blockMoves ]
-    , waitFor (Win X) [ blockMoves ]
-    , waitFor (Win O) [ blockMoves ]
+    [ wait
+        (\event ->
+            case event of
+                Win _ _ _ _ ->
+                    Continue [ blockMoves ]
+
+                Tie ->
+                    Continue [ blockMoves ]
+
+                _ ->
+                    Pause
+        )
     ]
 
 

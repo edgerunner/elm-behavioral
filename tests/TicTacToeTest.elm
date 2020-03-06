@@ -18,6 +18,24 @@ expectLastEvent event state =
         |> Expect.equal (Just event)
 
 
+expectOneEvent : GameEvent -> State GameEvent -> Expect.Expectation
+expectOneEvent event state =
+    let
+        check eventLog =
+            case eventLog of
+                [] ->
+                    Expect.fail "Event not found"
+
+                first :: rest ->
+                    if first == event then
+                        Expect.pass
+
+                    else
+                        check rest
+    in
+    check (log state)
+
+
 
 -- Actual testing
 
@@ -61,7 +79,7 @@ game =
                     |> fire (Click Top)
                     |> fire (Click Right)
                     |> fire (Click Bottom)
-                    |> expectLastEvent (Win X)
+                    |> expectOneEvent (Win X Center Top Bottom)
         , test "O can play a diagonal and win" <|
             \_ ->
                 initialize initialState
@@ -71,7 +89,7 @@ game =
                     |> fire (Click TopLeft)
                     |> fire (Click Bottom)
                     |> fire (Click BottomRight)
-                    |> expectLastEvent (Win O)
+                    |> expectOneEvent (Win O Center TopLeft BottomRight)
         , test "running out of space before a win is a tie" <|
             \_ ->
                 initialize initialState
@@ -84,7 +102,7 @@ game =
                     |> fire (Click Left)
                     |> fire (Click Right)
                     |> fire (Click BottomRight)
-                    |> expectLastEvent Tie
+                    |> expectOneEvent Tie
         , test "playing is not possible after a win. " <|
             \_ ->
                 initialize initialState
@@ -122,7 +140,7 @@ singlePlayerGame =
             \_ ->
                 initialize (automatedO ++ initialState)
                     |> fire (Click TopRight)
-                    |> expectLastEvent (Play O Center)
+                    |> expectOneEvent (Play O Center)
         , test "prevents X from completing a triplet" <|
             \_ ->
                 initialize (automatedO ++ initialState)
@@ -131,6 +149,8 @@ singlePlayerGame =
                     |> fireOne [ Play X Left, Play X Right ]
                     |> log
                     |> List.head
-                    |> Expect.notEqual
-                        (Just <| Win X)
+                    |> Expect.all
+                        [ Expect.notEqual (Just <| Win X Center Left Right)
+                        , Expect.notEqual (Just <| Win X Center Right Left)
+                        ]
         ]
