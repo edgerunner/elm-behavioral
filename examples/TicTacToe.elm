@@ -1,4 +1,4 @@
-module TicTacToe exposing (Cell(..), GameEvent(..), Player(..), automatedO, initialState)
+module TicTacToe exposing (Cell(..), GameEvent(..), Grid, Mark(..), Player(..), automatedO, board, initialState)
 
 import Behavior exposing (..)
 
@@ -35,6 +35,26 @@ type GameEvent
     | Play Player Cell
     | Win Player Cell Cell Cell
     | Tie
+    | Board Grid
+
+
+type alias Grid =
+    { topLeft : Mark
+    , top : Mark
+    , topRight : Mark
+    , left : Mark
+    , center : Mark
+    , right : Mark
+    , bottomLeft : Mark
+    , bottom : Mark
+    , bottomRight : Mark
+    }
+
+
+type Mark
+    = Blank
+    | Marked Player
+    | Highlighted Player
 
 
 playOnClick : Cell -> Thread GameEvent
@@ -322,3 +342,92 @@ automatedO =
         , [ oPrefersCenter ]
         , oPlaysAnywhere
         ]
+
+
+
+-- GRID STATE
+
+
+empty : Grid
+empty =
+    { topLeft = Blank
+    , top = Blank
+    , topRight = Blank
+    , left = Blank
+    , center = Blank
+    , right = Blank
+    , bottomLeft = Blank
+    , bottom = Blank
+    , bottomRight = Blank
+    }
+
+
+updateBoard : Grid -> Thread GameEvent
+updateBoard grid _ =
+    [ wait
+        (\event ->
+            case event of
+                Play player cell ->
+                    Continue <| List.map ((|>) (markGrid player cell grid)) [ updateBoard, publishBoard ]
+
+                Win player c1 c2 c3 ->
+                    Continue
+                        [ publishBoard <|
+                            List.foldl (highlightGrid player) grid [ c1, c2, c3 ]
+                        ]
+
+                _ ->
+                    Pause
+        )
+    ]
+
+
+publishBoard : Grid -> Thread GameEvent
+publishBoard grid _ =
+    [ request (Board grid) [ updateBoard grid ] ]
+
+
+markGrid : Player -> Cell -> Grid -> Grid
+markGrid player =
+    updateGridCell <| Marked player
+
+
+highlightGrid : Player -> Cell -> Grid -> Grid
+highlightGrid player =
+    updateGridCell <| Highlighted player
+
+
+updateGridCell : Mark -> Cell -> Grid -> Grid
+updateGridCell mark cell grid =
+    case cell of
+        TopLeft ->
+            { grid | topLeft = mark }
+
+        Top ->
+            { grid | top = mark }
+
+        TopRight ->
+            { grid | topRight = mark }
+
+        Left ->
+            { grid | left = mark }
+
+        Center ->
+            { grid | center = mark }
+
+        Right ->
+            { grid | right = mark }
+
+        BottomLeft ->
+            { grid | bottomLeft = mark }
+
+        Bottom ->
+            { grid | bottom = mark }
+
+        BottomRight ->
+            { grid | bottomRight = mark }
+
+
+board : List (Thread GameEvent)
+board =
+    [ updateBoard empty ]

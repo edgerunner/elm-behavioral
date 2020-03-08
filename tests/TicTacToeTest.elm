@@ -1,4 +1,4 @@
-module TicTacToeTest exposing (game, singlePlayerGame)
+module TicTacToeTest exposing (boardEvent, game, singlePlayerGame)
 
 import Behavior exposing (..)
 import Expect
@@ -153,4 +153,49 @@ singlePlayerGame =
                         [ Expect.notEqual (Just <| Win X Center Left Right)
                         , Expect.notEqual (Just <| Win X Center Right Left)
                         ]
+        ]
+
+
+boardEvent : Test
+boardEvent =
+    describe "Game board"
+        [ test "plays are marked" <|
+            \_ ->
+                initialize (initialState ++ board)
+                    |> fire (Play X Top)
+                    |> fire (Play O Center)
+                    |> expectOneEvent
+                        (Board
+                            { topLeft = Blank
+                            , top = Marked X
+                            , topRight = Blank
+                            , left = Blank
+                            , center = Marked O
+                            , right = Blank
+                            , bottomLeft = Blank
+                            , bottom = Blank
+                            , bottomRight = Blank
+                            }
+                        )
+        , test "wins are highlighted" <|
+            \_ ->
+                initialize (initialState ++ board)
+                    |> fire (Play X Top)
+                    |> fire (Play O Left)
+                    |> fire (Play X Center)
+                    |> fire (Play O Right)
+                    |> fire (Play X Bottom)
+                    |> expectOneEvent
+                        (Board
+                            { topLeft = Blank
+                            , top = Highlighted X
+                            , topRight = Blank
+                            , left = Marked O
+                            , center = Highlighted X
+                            , right = Marked O
+                            , bottomLeft = Blank
+                            , bottom = Highlighted X
+                            , bottomRight = Blank
+                            }
+                        )
         ]
