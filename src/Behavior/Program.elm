@@ -14,7 +14,14 @@ sandbox :
     -> Program () ( State event, model ) event
 sandbox record =
     Browser.sandbox
-        { init = ( record.behavior, record.init )
+        { init =
+            ( record.behavior
+            , List.foldr
+                record.reduce
+                record.init
+              <|
+                Behavior.recent record.behavior
+            )
         , view = record.view << Tuple.second
         , update = updateSandbox record.reduce
         }
