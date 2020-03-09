@@ -27,61 +27,29 @@ main =
 
 
 type alias StateAndGrid =
-    ( Behavior.State GameEvent, GridMarks )
-
-
-type CellMark
-    = Blank
-    | Marked Player Highlight
-
-
-type Highlight
-    = Plain
-    | Highlighted
-
-
-type alias RowMarks =
-    ( CellMark, CellMark, CellMark )
-
-
-type alias GridMarks =
-    ( RowMarks, RowMarks, RowMarks )
-
-
-blankGrid : GridMarks
-blankGrid =
-    ( ( Blank, Blank, Blank )
-    , ( Blank, Blank, Blank )
-    , ( Blank, Blank, Blank )
-    )
+    ( Behavior.State GameEvent, Grid )
 
 
 behavior : Behavior.State GameEvent
 behavior =
     Behavior.initialize
-        (automatedO ++ initialState)
+        (board ++ automatedO ++ initialState)
 
 
-init : GridMarks
+init : Grid
 init =
-    blankGrid
+    empty
 
 
 
 -- UPDATE
 
 
-reduce : GameEvent -> GridMarks -> GridMarks
+reduce : GameEvent -> Grid -> Grid
 reduce event grid =
     case event of
-        Play player cell_ ->
-            updateGrid (always <| Marked player Plain) cell_ grid
-
-        Win player c1 c2 c3 ->
-            grid
-                |> updateGrid (always <| Marked player Highlighted) c1
-                |> updateGrid (always <| Marked player Highlighted) c2
-                |> updateGrid (always <| Marked player Highlighted) c3
+        Board newGrid ->
+            newGrid
 
         _ ->
             grid
@@ -91,12 +59,8 @@ reduce event grid =
 -- VIEW
 
 
-view : GridMarks -> Html GameEvent
-view grid =
-    let
-        ( ( topLeft, top, topRight ), ( left, center, right ), ( bottomLeft, bottom, bottomRight ) ) =
-            grid
-    in
+view : Grid -> Html GameEvent
+view { topLeft, top, topRight, left, center, right, bottomLeft, bottom, bottomRight } =
     div []
         [ Html.node "style" [] [ text css ]
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
@@ -105,18 +69,24 @@ view grid =
         ]
 
 
-cell : Cell -> CellMark -> Html GameEvent
+cell : Cell -> Mark -> Html GameEvent
 cell currentCell cellMark =
     let
         markChar =
             case cellMark of
                 Blank ->
-                    "-"
+                    ""
 
-                Marked X _ ->
+                Marked X ->
                     "X"
 
-                Marked O _ ->
+                Marked O ->
+                    "O"
+
+                Highlighted X ->
+                    "X"
+
+                Highlighted O ->
                     "O"
 
         highlightClass =
@@ -124,59 +94,13 @@ cell currentCell cellMark =
                 Blank ->
                     class "blank"
 
-                Marked _ Plain ->
+                Marked _ ->
                     class "plain"
 
-                Marked _ Highlighted ->
+                Highlighted _ ->
                     class "highlighted"
     in
     button [ onClick (Click currentCell), highlightClass ] [ text markChar ]
-
-
-updateGrid : (CellMark -> CellMark) -> Cell -> GridMarks -> GridMarks
-updateGrid updater cell_ grid =
-    case cell_ of
-        TopLeft ->
-            updateFirst (\row -> updateFirst updater row) grid
-
-        Top ->
-            updateFirst (\row -> updateSecond updater row) grid
-
-        TopRight ->
-            updateFirst (\row -> updateThird updater row) grid
-
-        Left ->
-            updateSecond (\row -> updateFirst updater row) grid
-
-        Center ->
-            updateSecond (\row -> updateSecond updater row) grid
-
-        Right ->
-            updateSecond (\row -> updateThird updater row) grid
-
-        BottomLeft ->
-            updateThird (\row -> updateFirst updater row) grid
-
-        Bottom ->
-            updateThird (\row -> updateSecond updater row) grid
-
-        BottomRight ->
-            updateThird (\row -> updateThird updater row) grid
-
-
-updateFirst : (a -> a) -> ( a, a, a ) -> ( a, a, a )
-updateFirst updater ( a, b, c ) =
-    ( updater a, b, c )
-
-
-updateSecond : (a -> a) -> ( a, a, a ) -> ( a, a, a )
-updateSecond updater ( a, b, c ) =
-    ( a, updater b, c )
-
-
-updateThird : (a -> a) -> ( a, a, a ) -> ( a, a, a )
-updateThird updater ( a, b, c ) =
-    ( a, b, updater c )
 
 
 css : String

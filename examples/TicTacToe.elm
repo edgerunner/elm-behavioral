@@ -1,4 +1,14 @@
-module TicTacToe exposing (Cell(..), GameEvent(..), Grid, Mark(..), Player(..), automatedO, board, initialState)
+module TicTacToe exposing
+    ( Cell(..)
+    , GameEvent(..)
+    , Grid
+    , Mark(..)
+    , Player(..)
+    , automatedO
+    , board
+    , empty
+    , initialState
+    )
 
 import Behavior exposing (..)
 
@@ -430,4 +440,4 @@ updateGridCell mark cell grid =
 
 board : List (Thread GameEvent)
 board =
-    [ updateBoard empty ]
+    [ updateBoard empty, publishBoard empty ]
