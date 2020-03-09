@@ -165,7 +165,7 @@ detectWin2 player ( c1, c2 ) win _ =
 
 detectWin3 : Player -> Cell -> (Cell -> GameEvent) -> Thread GameEvent
 detectWin3 player cell win _ =
-    [ waitFor (Play player cell) [ andThen <| request (win cell) [] ]
+    [ waitFor (Play player cell) [ andThen <| request (win cell) [], andThen blockPlay ]
     , waitFor (Play (other player) cell) []
     ]
 
@@ -192,7 +192,7 @@ tieCountdown : Int -> Thread GameEvent
 tieCountdown count _ =
     case count of
         0 ->
-            [ request Tie [] ]
+            [ request Tie [ andThen blockPlay ], blockPlay ]
 
         _ ->
             [ wait
@@ -207,43 +207,25 @@ tieCountdown count _ =
             ]
 
 
-blockMovesAfterGameOver : Thread GameEvent
-blockMovesAfterGameOver _ =
-    let
-        blockMoves =
-            andThen <|
-                block
-                    (\event ->
-                        case event of
-                            Play _ _ ->
-                                Blocked
-
-                            _ ->
-                                Free
-                    )
-    in
-    [ wait
+blockPlay : Behavior GameEvent
+blockPlay =
+    block
         (\event ->
             case event of
-                Win _ _ _ _ ->
-                    Continue [ blockMoves ]
-
-                Tie ->
-                    Continue [ blockMoves ]
+                Play _ _ ->
+                    Blocked
 
                 _ ->
-                    Pause
+                    Free
         )
-    ]
 
 
 initialState : List (Thread GameEvent)
 initialState =
     takeTurn X
         :: tieCountdown 9
-        :: blockMovesAfterGameOver
-        :: cellThreads
-        ++ winningTripletThreads
+        :: winningTripletThreads
+        ++ cellThreads
 
 
 
