@@ -1,6 +1,6 @@
 module TicTacToeApp exposing (main)
 
-import Behavior
+import Behavior exposing (State)
 import Behavior.Program
 import Html exposing (Html, button, div, text)
 import Html.Attributes exposing (class)
@@ -12,61 +12,58 @@ import TicTacToe exposing (..)
 -- PROGRAM
 
 
-main : Program () StateAndGrid GameEvent
+main : Program () (State GameEvent) GameEvent
 main =
     Behavior.Program.sandbox
-        { init = init
-        , view = view
+        { view = view
         , behavior = behavior
-        , reduce = reduce
         }
 
 
 
--- MODEL
+-- MODEL ie. BEHAVIOR
 
 
-type alias StateAndGrid =
-    ( Behavior.State GameEvent, Grid )
-
-
-behavior : Behavior.State GameEvent
+behavior : State GameEvent
 behavior =
     Behavior.initialize
         (board ++ automatedO ++ initialState)
 
 
-init : Grid
-init =
-    empty
-
-
 
 -- UPDATE
-
-
-reduce : GameEvent -> Grid -> Grid
-reduce event grid =
-    case event of
-        Board newGrid ->
-            newGrid
-
-        _ ->
-            grid
-
-
-
 -- VIEW
 
 
-view : Grid -> Html GameEvent
-view { topLeft, top, topRight, left, center, right, bottomLeft, bottom, bottomRight } =
+view : State GameEvent -> Html GameEvent
+view state =
+    let
+        { topLeft, top, topRight, left, center, right, bottomLeft, bottom, bottomRight } =
+            extractGrid state
+    in
     div []
         [ Html.node "style" [] [ text css ]
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
         ]
+
+
+extractGrid : State GameEvent -> Grid
+extractGrid state =
+    let
+        latestBoardUpdate eventLog =
+            case eventLog of
+                [] ->
+                    empty
+
+                (Board grid) :: _ ->
+                    grid
+
+                _ :: rest ->
+                    latestBoardUpdate rest
+    in
+    latestBoardUpdate <| Behavior.log state
 
 
 cell : Cell -> Mark -> Html GameEvent
