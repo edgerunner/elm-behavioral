@@ -3,7 +3,7 @@
 ## How
 
 This is just a fresh repo with `elm init`. Please fork it and to submit the challenge create a PR with your solution.
-For running it use whatever you want (it can be just an `elm reactor`).
+For running it use whatever you want (it can be just an `elm reactor`). For styling, please use elm-css.
 
 ## What 
 
@@ -15,8 +15,6 @@ The game should include:
 - display who's turn it is
 - display who has won
 - rematch button
-
-The looks are up to you.
 
 #### Bonus features
 If you feel like it you can add some of the following:
