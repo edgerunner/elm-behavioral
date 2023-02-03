@@ -21,6 +21,6 @@ The looks are up to you.
 #### Bonus features
 If you feel like it you can add some of the following:
 
-- make the display of who has won nice looking/fancy (design is your choice)
+- use styling and/or animation to enhance the user experience 
 - make it possible to select the size of grid on the starting screen (smallest is 3x3, but you can choose any n x n higher than that)
 - persist game state between refreshes
