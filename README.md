@@ -2,7 +2,7 @@
 
 ## How
 
-This repo is just fresh `elm init` and README. Please fork it and to submit the challenge create a PR with your solution.
+This is just a fresh repo with `elm init`. Please fork it and to submit the challenge create a PR with your solution.
 For running it use whatever you want (it can be just an `elm reactor`).
 
 ## What 
