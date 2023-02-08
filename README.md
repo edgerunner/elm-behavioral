@@ -12,7 +12,7 @@ Build a Tic Tac Toe game in Elm that allows two players to play against each oth
 The game should include:
 - starting screen (where you press Play)
 - game board - 3x3 grid of squares
-- display who's turn it is
+- display whose turn it is
 - display who has won
 - rematch button
 
