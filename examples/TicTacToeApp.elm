@@ -49,6 +49,9 @@ view state =
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
+        , endgame state
+            |> Maybe.map (text >> List.singleton >> div [ class "endgame" ])
+            |> Maybe.withDefault (text "")
         ]
 
 
@@ -103,6 +106,26 @@ cell currentCell cellMark =
     button [ onClick (Click currentCell), highlightClass ] [ text markChar ]
 
 
+endgame : State GameEvent -> Maybe String
+endgame =
+    let
+        isEnd event =
+            case event of
+                Win X _ _ _ ->
+                    Just "X won!"
+
+                Win O _ _ _ ->
+                    Just "O won!"
+
+                Tie ->
+                    Just "It's a tie"
+
+                _ ->
+                    Nothing
+    in
+    Behavior.log >> List.filterMap isEnd >> List.head
+
+
 style : Snippet
 style =
     Css.Global.body
@@ -119,9 +142,26 @@ style =
                 , Css.property "background-color" "coral"
                 , Css.height (Css.vh 100)
                 , Css.boxSizing Css.borderBox
+                , Css.position Css.relative
                 , Css.Global.children
                     [ Css.Global.div
                         [ Css.property "display" "contents" ]
+                    , Css.Global.class "endgame"
+                        [ Css.position Css.absolute
+                        , Css.displayFlex
+                        , Css.fontSize (Css.em 2)
+                        , Css.textAlign Css.center
+                        , Css.property "inset" "0.5em"
+                        , Css.property "grid-row" "2/2"
+                        , Css.property "grid-column" "1/-1"
+                        , Css.margin Css.auto
+                        , Css.alignItems Css.center
+                        , Css.justifyContent Css.center
+                        , Css.property "background-color" "bisque"
+                        , Css.padding2 (Css.rem 0.5) (Css.rem 1)
+                        , Css.borderRadius (Css.rem 1)
+                        , Css.property "border" "solid 0.25em salmon"
+                        ]
                     ]
                 , Css.Global.descendants
                     [ Css.Global.button
