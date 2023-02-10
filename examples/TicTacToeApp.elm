@@ -2,9 +2,12 @@ module TicTacToeApp exposing (main)
 
 import Behavior exposing (State)
 import Behavior.Program
+import Css
+import Css.Global exposing (Snippet)
 import Html exposing (Html, button, div, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Html.Styled
 import TicTacToe exposing (..)
 
 
@@ -42,7 +45,7 @@ view state =
             extractGrid state
     in
     div []
-        [ Html.node "style" [] [ text css ]
+        [ Css.Global.global [ style ] |> Html.Styled.toUnstyled
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
@@ -100,28 +103,33 @@ cell currentCell cellMark =
     button [ onClick (Click currentCell), highlightClass ] [ text markChar ]
 
 
-css : String
-css =
-    """
-body > div > div {
-    display: contents;
-}
-body > div {
-    display: grid;
-    grid-template-columns: repeat(3,6rem);
-    grid-template-rows: repeat(3,6rem);
-    padding: .5em;
-    gap: .5em;
-    background-color: coral;
-    justify-content: center;
-}
-button {
-    font-size: 3rem;
-    background: white;
-    border: none;
-}
-button.highlighted {
-    background: black;
-    color: white;
-}
-"""
+style : Snippet
+style =
+    Css.Global.body
+        [ Css.Global.children
+            [ Css.Global.div
+                [ Css.property "display" "grid"
+                , Css.property "grid-template-columns" "repeat(3,6rem)"
+                , Css.property "grid-template-rows" "repeat(3,6rem)"
+                , Css.padding (Css.em 0.5)
+                , Css.property "gap" "0.5em"
+                , Css.justifyContent Css.center
+                , Css.property "background-color" "coral"
+                , Css.Global.children
+                    [ Css.Global.div
+                        [ Css.property "display" "contents" ]
+                    ]
+                , Css.Global.descendants
+                    [ Css.Global.button
+                        [ Css.fontSize (Css.rem 3)
+                        , Css.backgroundColor (Css.rgb 255 255 255)
+                        , Css.borderStyle Css.none
+                        , Css.Global.withClass "highlighted"
+                            [ Css.backgroundColor (Css.rgb 0 0 0)
+                            , Css.color (Css.rgb 255 255 255)
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
