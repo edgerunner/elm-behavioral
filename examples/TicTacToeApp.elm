@@ -106,7 +106,8 @@ cell currentCell cellMark =
 style : Snippet
 style =
     Css.Global.body
-        [ Css.Global.children
+        [ Css.boxSizing Css.borderBox
+        , Css.Global.children
             [ Css.Global.div
                 [ Css.property "display" "grid"
                 , Css.property "grid-template-columns" "repeat(3,6rem)"
@@ -114,7 +115,10 @@ style =
                 , Css.padding (Css.em 0.5)
                 , Css.property "gap" "0.5em"
                 , Css.justifyContent Css.center
+                , Css.property "align-content" "center"
                 , Css.property "background-color" "coral"
+                , Css.height (Css.vh 100)
+                , Css.boxSizing Css.borderBox
                 , Css.Global.children
                     [ Css.Global.div
                         [ Css.property "display" "contents" ]
