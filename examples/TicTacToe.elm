@@ -8,6 +8,7 @@ module TicTacToe exposing
     , board
     , empty
     , initialState
+    , restartable
     )
 
 import Behavior exposing (..)
@@ -46,6 +47,7 @@ type GameEvent
     | Win Player Cell Cell Cell
     | Tie
     | Board Grid
+    | Restart
 
 
 type alias Grid =
@@ -75,7 +77,9 @@ playOnClick cell _ =
             , request (Play O cell) []
             ]
     in
-    [ waitFor (Click cell) [ playAnyMark ] ]
+    [ waitFor (Click cell) [ playAnyMark ]
+    , waitFor Restart []
+    ]
 
 
 takeTurn : Player -> Thread GameEvent
@@ -92,6 +96,7 @@ takeTurn player _ =
                 _ ->
                     Pause
         )
+    , waitFor Restart []
     , block
         (\event ->
             case ( player, event ) of
@@ -110,13 +115,15 @@ takeTurn player _ =
 playCellOnlyOnce : Cell -> Thread GameEvent
 playCellOnlyOnce cell _ =
     let
-        blockCell _ =
+        blockCell () =
             [ blockEvent (Play O cell)
             , blockEvent (Play X cell)
+            , waitFor Restart []
             ]
     in
     [ waitFor (Play X cell) [ blockCell ]
     , waitFor (Play O cell) [ blockCell ]
+    , waitFor Restart []
     ]
 
 
@@ -151,6 +158,7 @@ detectWin1 ( c1, c2, c3 ) _ =
     , waitFor (Play O c2) [ detectWin2 O ( c1, c3 ) (Win O c2) ]
     , waitFor (Play X c3) [ detectWin2 X ( c2, c1 ) (Win X c3) ]
     , waitFor (Play O c3) [ detectWin2 O ( c2, c1 ) (Win O c3) ]
+    , waitFor Restart []
     ]
 
 
@@ -160,13 +168,15 @@ detectWin2 player ( c1, c2 ) win _ =
     , waitFor (Play player c2) [ detectWin3 player c1 (win c2) ]
     , waitFor (Play (other player) c1) []
     , waitFor (Play (other player) c2) []
+    , waitFor Restart []
     ]
 
 
 detectWin3 : Player -> Cell -> (Cell -> GameEvent) -> Thread GameEvent
 detectWin3 player cell win _ =
-    [ waitFor (Play player cell) [ andThen <| request (win cell) [], andThen blockPlay ]
+    [ waitFor (Play player cell) [ andThen <| request (win cell) [], blockPlayUntilRestart ]
     , waitFor (Play (other player) cell) []
+    , waitFor Restart []
     ]
 
 
@@ -192,7 +202,7 @@ tieCountdown : Int -> Thread GameEvent
 tieCountdown count _ =
     case count of
         0 ->
-            [ request Tie [ andThen blockPlay ], blockPlay ]
+            [ request Tie [ blockPlayUntilRestart ] ]
 
         _ ->
             [ wait
@@ -204,7 +214,15 @@ tieCountdown count _ =
                         _ ->
                             Pause
                 )
+            , waitFor Restart []
             ]
+
+
+blockPlayUntilRestart : Thread GameEvent
+blockPlayUntilRestart _ =
+    [ waitFor Restart []
+    , blockPlay
+    ]
 
 
 blockPlay : Behavior GameEvent
@@ -238,6 +256,7 @@ oPlaysAnywhere =
         anywhere cell _ =
             [ request (Play O cell) []
             , waitFor (Play X cell) []
+            , waitFor Restart []
             ]
     in
     List.map anywhere allCells
@@ -247,6 +266,7 @@ oPrefersCenter : Thread GameEvent
 oPrefersCenter _ =
     [ request (Play O Center) []
     , waitFor (Play X Center) []
+    , waitFor Restart []
     , block
         (\event ->
             case event of
@@ -276,6 +296,7 @@ tripletDefense1 ( c1, c2, c3 ) _ =
     , waitFor (Play O c1) []
     , waitFor (Play O c2) []
     , waitFor (Play O c3) []
+    , waitFor Restart []
     ]
 
 
@@ -285,6 +306,7 @@ tripletDefense2 ( c1, c2 ) _ =
     , waitFor (Play X c2) [ tripletDefense3 c1 ]
     , waitFor (Play O c1) []
     , waitFor (Play O c2) []
+    , waitFor Restart []
     ]
 
 
@@ -292,6 +314,7 @@ tripletDefense3 : Cell -> Thread GameEvent
 tripletDefense3 cell _ =
     [ request (Play O cell) []
     , waitFor (Play O cell) []
+    , waitFor Restart []
     ]
 
 
@@ -309,6 +332,7 @@ tripletOffense1 ( c1, c2, c3 ) _ =
     , waitFor (Play X c1) []
     , waitFor (Play X c2) []
     , waitFor (Play X c3) []
+    , waitFor Restart []
     ]
 
 
@@ -318,12 +342,15 @@ tripletOffense2 ( c1, c2 ) _ =
     , waitFor (Play O c2) [ tripletOffense3 c1 ]
     , waitFor (Play X c1) []
     , waitFor (Play X c2) []
+    , waitFor Restart []
     ]
 
 
 tripletOffense3 : Cell -> Thread GameEvent
 tripletOffense3 cell _ =
-    [ request (Play O cell) [] ]
+    [ request (Play O cell) []
+    , waitFor Restart []
+    ]
 
 
 automatedO : List (Thread GameEvent)
@@ -368,6 +395,9 @@ updateBoard grid _ =
                             List.foldl (highlightGrid player) grid [ c1, c2, c3 ]
                         ]
 
+                Restart ->
+                    Continue []
+
                 _ ->
                     Pause
         )
@@ -376,7 +406,9 @@ updateBoard grid _ =
 
 publishBoard : Grid -> Thread GameEvent
 publishBoard grid _ =
-    [ request (Board grid) [ updateBoard grid ] ]
+    [ request (Board grid) [ updateBoard grid ]
+    , waitFor Restart []
+    ]
 
 
 markGrid : Player -> Cell -> Grid -> Grid
@@ -423,3 +455,17 @@ updateGridCell mark cell grid =
 board : List (Thread GameEvent)
 board =
     [ updateBoard empty, publishBoard empty ]
+
+
+
+-- RESTARTABLE GAME
+
+
+restartable : List (Thread GameEvent) -> List (Thread GameEvent)
+restartable startingBehaviors =
+    resetGameOnRestart startingBehaviors :: startingBehaviors
+
+
+resetGameOnRestart : List (Thread GameEvent) -> Thread GameEvent
+resetGameOnRestart startingBehaviors _ =
+    [ waitFor Restart <| restartable startingBehaviors ]

@@ -29,12 +29,11 @@ main =
 
 behavior : State GameEvent
 behavior =
-    Behavior.initialize
-        (board ++ automatedO ++ initialState)
+    Behavior.initialize <|
+        restartable (board ++ automatedO ++ initialState)
 
 
 
--- UPDATE
 -- VIEW
 
 
@@ -49,10 +48,19 @@ view state =
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
-        , endgame state
-            |> Maybe.map (text >> List.singleton >> div [ class "endgame" ])
-            |> Maybe.withDefault (text "")
+        , endgameView state
         ]
+
+
+endgameView : State GameEvent -> Html GameEvent
+endgameView =
+    endgame
+        >> Maybe.map
+            (text
+                >> List.singleton
+                >> div [ class "endgame", onClick Restart ]
+            )
+        >> Maybe.withDefault (text "")
 
 
 extractGrid : State GameEvent -> Grid
@@ -123,7 +131,7 @@ endgame =
                 _ ->
                     Nothing
     in
-    Behavior.log >> List.filterMap isEnd >> List.head
+    Behavior.recent >> List.filterMap isEnd >> List.head
 
 
 style : Snippet
@@ -161,6 +169,7 @@ style =
                         , Css.padding2 (Css.rem 0.5) (Css.rem 1)
                         , Css.borderRadius (Css.rem 1)
                         , Css.property "border" "solid 0.25em salmon"
+                        , Css.cursor Css.pointer
                         ]
                     ]
                 , Css.Global.descendants

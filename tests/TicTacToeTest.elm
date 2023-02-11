@@ -1,4 +1,4 @@
-module TicTacToeTest exposing (boardEvent, game, singlePlayerGame)
+module TicTacToeTest exposing (boardEvent, game, restarting, singlePlayerGame)
 
 import Behavior exposing (..)
 import Expect
@@ -195,6 +195,37 @@ boardEvent =
                             , right = Marked O
                             , bottomLeft = Blank
                             , bottom = Highlighted X
+                            , bottomRight = Blank
+                            }
+                        )
+        ]
+
+
+restarting : Test
+restarting =
+    describe "Restarting"
+        [ test "A finished game can be restarted" <|
+            \_ ->
+                (initialState ++ board)
+                    |> restartable
+                    |> initialize
+                    |> fire (Play X Top)
+                    |> fire (Play O TopLeft)
+                    |> fire (Play X Center)
+                    |> fire (Play O Left)
+                    |> fire (Play X Bottom)
+                    |> fire Restart
+                    |> fire (Play X Right)
+                    |> expectOneEvent
+                        (Board
+                            { topLeft = Blank
+                            , top = Blank
+                            , topRight = Blank
+                            , left = Blank
+                            , center = Blank
+                            , right = Marked X
+                            , bottomLeft = Blank
+                            , bottom = Blank
                             , bottomRight = Blank
                             }
                         )
