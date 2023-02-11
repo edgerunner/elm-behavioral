@@ -138,6 +138,7 @@ style : Snippet
 style =
     Css.Global.body
         [ Css.boxSizing Css.borderBox
+        , Css.fontFamilies [ "Lato", "Verdana", Css.sansSerif.value ]
         , Css.Global.children
             [ Css.Global.div
                 [ Css.property "display" "grid"
