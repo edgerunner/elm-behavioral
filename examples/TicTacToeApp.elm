@@ -38,7 +38,7 @@ view state =
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
-        , endgameView state
+        , state |> endgame |> endgameView
         ]
 
 
@@ -56,7 +56,7 @@ turnClass turn =
                 "turn-o"
 
 
-endgameView : State GameEvent -> Html GameEvent
+endgameView : Maybe GameEvent -> Html GameEvent
 endgameView =
     let
         endgameText event =
@@ -73,8 +73,7 @@ endgameView =
                 _ ->
                     Nothing
     in
-    endgame
-        >> Maybe.andThen endgameText
+    Maybe.andThen endgameText
         >> Maybe.map
             (text
                 >> List.singleton
