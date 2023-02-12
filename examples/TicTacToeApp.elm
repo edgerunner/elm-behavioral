@@ -19,18 +19,8 @@ main : Program () (State GameEvent) GameEvent
 main =
     Behavior.Program.sandbox
         { view = view
-        , behavior = behavior
+        , behavior = singlePlayer
         }
-
-
-
--- MODEL ie. BEHAVIOR
-
-
-behavior : State GameEvent
-behavior =
-    Behavior.initialize <|
-        restartable (board ++ automatedO ++ initialState)
 
 
 

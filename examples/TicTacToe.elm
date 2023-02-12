@@ -10,7 +10,9 @@ module TicTacToe exposing
     , endgame
     , initialState
     , restartable
+    , singlePlayer
     , turn
+    , twoPlayers
     )
 
 import Behavior exposing (..)
@@ -527,3 +529,19 @@ endgame =
                     findEndgame more
     in
     log >> findEndgame
+
+
+
+-- INITIALIZATION
+
+
+singlePlayer : State GameEvent
+singlePlayer =
+    Behavior.initialize <|
+        restartable (board ++ automatedO ++ initialState)
+
+
+twoPlayers : State GameEvent
+twoPlayers =
+    Behavior.initialize <|
+        restartable (board ++ initialState)
