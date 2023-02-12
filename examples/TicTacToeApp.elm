@@ -43,13 +43,27 @@ view state =
         { topLeft, top, topRight, left, center, right, bottomLeft, bottom, bottomRight } =
             extractGrid state
     in
-    div []
+    div [ state |> turn |> turnClass ]
         [ Css.Global.global [ style ] |> Html.Styled.toUnstyled
         , div [] <| List.map2 cell [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , div [] <| List.map2 cell [ Left, Center, Right ] [ left, center, right ]
         , div [] <| List.map2 cell [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
         , endgameView state
         ]
+
+
+turnClass : Maybe Player -> Html.Attribute e
+turnClass turn =
+    class <|
+        case turn of
+            Nothing ->
+                "gameover"
+
+            Just X ->
+                "turn-x"
+
+            Just O ->
+                "turn-o"
 
 
 endgameView : State GameEvent -> Html GameEvent
@@ -181,6 +195,38 @@ style =
                         , Css.Global.withClass "highlighted"
                             [ Css.backgroundColor (Css.rgb 0 0 0)
                             , Css.color (Css.rgb 255 255 255)
+                            ]
+                        ]
+                    ]
+                , Css.Global.withClass "turn-x"
+                    [ Css.Global.descendants
+                        [ Css.Global.button
+                            [ Css.Global.withClass "blank"
+                                [ Css.after
+                                    [ Css.property "content" "'X'"
+                                    , Css.opacity (Css.num 0.05)
+                                    ]
+                                , Css.hover
+                                    [ Css.after
+                                        [ Css.opacity (Css.num 0.4) ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                , Css.Global.withClass "turn-o"
+                    [ Css.Global.descendants
+                        [ Css.Global.button
+                            [ Css.Global.withClass "blank"
+                                [ Css.after
+                                    [ Css.property "content" "'O'"
+                                    , Css.opacity (Css.num 0.05)
+                                    ]
+                                , Css.hover
+                                    [ Css.after
+                                        [ Css.opacity (Css.num 0.4) ]
+                                    ]
+                                ]
                             ]
                         ]
                     ]

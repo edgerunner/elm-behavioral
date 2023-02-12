@@ -9,6 +9,7 @@ module TicTacToe exposing
     , empty
     , initialState
     , restartable
+    , turn
     )
 
 import Behavior exposing (..)
@@ -469,3 +470,36 @@ restartable startingBehaviors =
 resetGameOnRestart : List (Thread GameEvent) -> Thread GameEvent
 resetGameOnRestart startingBehaviors _ =
     [ waitFor Restart <| restartable startingBehaviors ]
+
+
+
+-- HELPERS
+
+
+turn : State GameEvent -> Maybe Player
+turn =
+    let
+        findTurn events =
+            case events of
+                [] ->
+                    Just X
+
+                (Play X _) :: _ ->
+                    Just O
+
+                (Play O _) :: _ ->
+                    Just X
+
+                Restart :: _ ->
+                    Just X
+
+                (Win _ _ _ _) :: _ ->
+                    Nothing
+
+                Tie :: _ ->
+                    Nothing
+
+                _ :: more ->
+                    findTurn more
+    in
+    log >> findTurn
