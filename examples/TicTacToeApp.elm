@@ -147,7 +147,7 @@ style =
                 , Css.property "gap" "0.5em"
                 , Css.justifyContent Css.center
                 , Css.property "align-content" "center"
-                , Css.property "background-color" "coral"
+                , Css.backgroundColor palette.coral
                 , Css.height (Css.vh 100)
                 , Css.boxSizing Css.borderBox
                 , Css.position Css.relative
@@ -165,21 +165,21 @@ style =
                         , Css.margin Css.auto
                         , Css.alignItems Css.center
                         , Css.justifyContent Css.center
-                        , Css.property "background-color" "bisque"
+                        , Css.backgroundColor palette.bisque
                         , Css.padding2 (Css.rem 0.5) (Css.rem 1)
                         , Css.borderRadius (Css.rem 1)
-                        , Css.property "border" "solid 0.25em salmon"
+                        , Css.border3 (Css.rem 0.5) Css.solid palette.coral
                         , Css.cursor Css.pointer
                         ]
                     ]
                 , Css.Global.descendants
                     [ Css.Global.button
                         [ Css.fontSize (Css.rem 3)
-                        , Css.backgroundColor (Css.rgb 255 255 255)
+                        , Css.backgroundColor palette.white
                         , Css.borderStyle Css.none
                         , Css.Global.withClass "highlighted"
-                            [ Css.backgroundColor (Css.rgb 0 0 0)
-                            , Css.color (Css.rgb 255 255 255)
+                            [ Css.backgroundColor palette.black
+                            , Css.color palette.white
                             ]
                         ]
                     ]
@@ -218,3 +218,17 @@ style =
                 ]
             ]
         ]
+
+
+palette :
+    { white : Css.Color
+    , black : Css.Color
+    , coral : Css.Color
+    , bisque : Css.Color
+    }
+palette =
+    { white = Css.rgb 255 255 255
+    , black = Css.rgb 0 0 0
+    , coral = Css.rgb 255 127 80
+    , bisque = Css.rgb 255 228 196
+    }
