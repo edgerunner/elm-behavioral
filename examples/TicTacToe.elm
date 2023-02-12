@@ -7,6 +7,7 @@ module TicTacToe exposing
     , automatedO
     , board
     , empty
+    , endgame
     , initialState
     , restartable
     , turn
@@ -503,3 +504,26 @@ turn =
                     findTurn more
     in
     log >> findTurn
+
+
+endgame : State GameEvent -> Maybe GameEvent
+endgame =
+    let
+        findEndgame events =
+            case events of
+                [] ->
+                    Nothing
+
+                Restart :: _ ->
+                    Nothing
+
+                Tie :: _ ->
+                    Just Tie
+
+                (Win player c1 c2 c3) :: _ ->
+                    Just <| Win player c1 c2 c3
+
+                _ :: more ->
+                    findEndgame more
+    in
+    log >> findEndgame

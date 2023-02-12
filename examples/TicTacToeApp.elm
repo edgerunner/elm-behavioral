@@ -68,7 +68,23 @@ turnClass turn =
 
 endgameView : State GameEvent -> Html GameEvent
 endgameView =
+    let
+        endgameText event =
+            case event of
+                Win X _ _ _ ->
+                    Just "X won!"
+
+                Win O _ _ _ ->
+                    Just "O won!"
+
+                Tie ->
+                    Just "It's a tie"
+
+                _ ->
+                    Nothing
+    in
     endgame
+        >> Maybe.andThen endgameText
         >> Maybe.map
             (text
                 >> List.singleton
@@ -126,26 +142,6 @@ cell currentCell cellMark =
                     class "highlighted"
     in
     button [ onClick (Click currentCell), highlightClass ] [ text markChar ]
-
-
-endgame : State GameEvent -> Maybe String
-endgame =
-    let
-        isEnd event =
-            case event of
-                Win X _ _ _ ->
-                    Just "X won!"
-
-                Win O _ _ _ ->
-                    Just "O won!"
-
-                Tie ->
-                    Just "It's a tie"
-
-                _ ->
-                    Nothing
-    in
-    Behavior.recent >> List.filterMap isEnd >> List.head
 
 
 style : Snippet
