@@ -4,6 +4,7 @@ import Behavior exposing (State)
 import Behavior.Program
 import Css
 import Css.Global exposing (Snippet)
+import Css.Transitions
 import Html exposing (Html, button, div, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -102,35 +103,24 @@ extractGrid state =
 cell : Cell -> Mark -> Html GameEvent
 cell currentCell cellMark =
     let
-        markChar =
+        ( markChar, highlightClass ) =
             case cellMark of
                 Blank ->
-                    ""
+                    ( "", "blank" )
 
                 Marked X ->
-                    "X"
+                    ( "X", "plain x" )
 
                 Marked O ->
-                    "O"
+                    ( "O", "plain o" )
 
                 Highlighted X ->
-                    "X"
+                    ( "X", "highlighted x" )
 
                 Highlighted O ->
-                    "O"
-
-        highlightClass =
-            case cellMark of
-                Blank ->
-                    class "blank"
-
-                Marked _ ->
-                    class "plain"
-
-                Highlighted _ ->
-                    class "highlighted"
+                    ( "O", "highlighted o" )
     in
-    button [ onClick (Click currentCell), highlightClass ] [ text markChar ]
+    button [ onClick (Click currentCell), class highlightClass ] [ text markChar ]
 
 
 style : Snippet
@@ -186,14 +176,21 @@ style =
                 , Css.Global.withClass "turn-x"
                     [ Css.Global.descendants
                         [ Css.Global.button
-                            [ Css.Global.withClass "blank"
-                                [ Css.after
+                            [ Css.opacity (Css.num 1)
+                            , Css.Global.withClass "blank"
+                                [ Css.opacity (Css.num 0.4)
+                                , Css.after
                                     [ Css.property "content" "'X'"
                                     , Css.opacity (Css.num 0.05)
                                     ]
                                 , Css.hover
                                     [ Css.after
                                         [ Css.opacity (Css.num 0.4) ]
+                                    ]
+                                ]
+                            , Css.Global.withClass "o"
+                                [ Css.Transitions.transition
+                                    [ Css.Transitions.opacity3 100 100 Css.Transitions.easeIn
                                     ]
                                 ]
                             ]
