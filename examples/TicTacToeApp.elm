@@ -107,7 +107,7 @@ cellView turn currentCell cellMark =
                     )
 
                 Marked player ->
-                    ( playerMark player, [ cellStyle ] )
+                    ( playerMark player, [ cellStyle, computerPlayerTransitionDelay player ] )
 
                 Highlighted player ->
                     ( playerMark player, [ cellStyle, highlightedCellStyle ] )
@@ -183,6 +183,8 @@ cellStyle =
         , Css.borderStyle Css.none
         , Css.backgroundColor palette.white
         , Css.color palette.black
+        , Css.Transitions.transition
+            [ Css.Transitions.color 100 ]
         ]
 
 
@@ -201,6 +203,17 @@ blankCellStyles =
         , Css.hover
             [ Css.color palette.coral ]
         ]
+
+
+computerPlayerTransitionDelay : Player -> Style
+computerPlayerTransitionDelay player =
+    Css.Transitions.transition <|
+        case player of
+            O ->
+                [ Css.Transitions.color2 100 200 ]
+
+            X ->
+                []
 
 
 globalCSS : Snippet
