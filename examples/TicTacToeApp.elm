@@ -4,6 +4,7 @@ import Behavior exposing (State)
 import Behavior.Program
 import Css exposing (Style)
 import Css.Global exposing (Snippet)
+import Css.Transitions
 import Html.Styled as Html exposing (Html, button, div, text)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
@@ -164,6 +165,14 @@ endgameStyle =
         , Css.borderRadius (Css.rem 1)
         , Css.border3 (Css.rem 0.5) Css.solid palette.coral
         , Css.cursor Css.pointer
+        , Css.after
+            [ Css.property "content" "'\\00a0⎋'"
+            , Css.Transitions.transition
+                [ Css.Transitions.color 100 ]
+            , Css.color palette.white
+            , Css.hover
+                [ Css.color palette.coral ]
+            ]
         ]
 
 
