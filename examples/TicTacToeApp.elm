@@ -8,7 +8,7 @@ import Css.Transitions
 import Html.Styled as Html exposing (Html, button, div, text)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
-import TicTacToe exposing (..)
+import TicTacToe exposing (Cell(..), GameEvent(..), Grid, Mark(..), Player(..))
 
 
 
@@ -19,7 +19,7 @@ main : Program () (State GameEvent) GameEvent
 main =
     Behavior.Program.sandbox
         { view = view >> Html.toUnstyled
-        , behavior = singlePlayer
+        , behavior = TicTacToe.singlePlayer
         }
 
 
@@ -34,7 +34,7 @@ view state =
             extractGrid state
 
         rowView positions marks =
-            List.map2 (state |> turn |> cellView) positions marks
+            List.map2 (state |> TicTacToe.turn |> cellView) positions marks
                 |> div [ css [ rowStyle ] ]
     in
     div [ css [ gameStyle ] ]
@@ -42,7 +42,7 @@ view state =
         , rowView [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
         , rowView [ Left, Center, Right ] [ left, center, right ]
         , rowView [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
-        , state |> endgame |> endgameView
+        , state |> TicTacToe.endgame |> endgameView
         ]
 
 
@@ -78,7 +78,7 @@ extractGrid state =
         latestBoardUpdate eventLog =
             case eventLog of
                 [] ->
-                    empty
+                    TicTacToe.empty
 
                 (Board grid) :: _ ->
                     grid
