@@ -1,0 +1,2 @@
+#/bin/sh
+elm-live examples/TicTacToeApp.elm --dir ./elm-live/ -- --debug --output=./elm-live/index.html
