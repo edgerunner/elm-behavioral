@@ -32,14 +32,15 @@ view state =
         { topLeft, top, topRight, left, center, right, bottomLeft, bottom, bottomRight } =
             extractGrid state
 
-        row =
-            List.map2 (state |> turn |> cell)
+        rowView positions marks =
+            List.map2 (state |> turn |> cellView) positions marks
+                |> div [ css [ rowStyle ] ]
     in
     div [ css [ gameStyle ] ]
         [ Css.Global.global [ globalCSS ]
-        , div [ css [ rowStyle ] ] <| row [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
-        , div [ css [ rowStyle ] ] <| row [ Left, Center, Right ] [ left, center, right ]
-        , div [ css [ rowStyle ] ] <| row [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
+        , rowView [ TopLeft, Top, TopRight ] [ topLeft, top, topRight ]
+        , rowView [ Left, Center, Right ] [ left, center, right ]
+        , rowView [ BottomLeft, Bottom, BottomRight ] [ bottomLeft, bottom, bottomRight ]
         , state |> endgame |> endgameView
         ]
 
@@ -87,40 +88,40 @@ extractGrid state =
     latestBoardUpdate <| Behavior.log state
 
 
-cell : Maybe Player -> Cell -> Mark -> Html GameEvent
-cell turn currentCell cellMark =
+cellView : Maybe Player -> Cell -> Mark -> Html GameEvent
+cellView turn currentCell cellMark =
     let
         ( markChar, markStyles ) =
             case cellMark of
                 Blank ->
-                    ( case turn of
-                        Just X ->
-                            "X"
-
-                        Just O ->
-                            "O"
-
-                        Nothing ->
-                            ""
+                    ( turn
+                        |> Maybe.map playerMark
+                        |> Maybe.withDefault ""
                     , [ cellStyle
                       , blankCellStyles
-                      , Css.cursor Css.pointer
+                      , turn
+                            |> Maybe.map (\_ -> Css.cursor Css.pointer)
+                            |> Maybe.withDefault (Css.cursor Css.unset)
                       ]
                     )
 
-                Marked X ->
-                    ( "X", [ cellStyle ] )
+                Marked player ->
+                    ( playerMark player, [ cellStyle ] )
 
-                Marked O ->
-                    ( "O", [ cellStyle ] )
-
-                Highlighted X ->
-                    ( "X", [ cellStyle, highlightedCellStyle ] )
-
-                Highlighted O ->
-                    ( "O", [ cellStyle, highlightedCellStyle ] )
+                Highlighted player ->
+                    ( playerMark player, [ cellStyle, highlightedCellStyle ] )
     in
     button [ onClick (Click currentCell), css markStyles ] [ text markChar ]
+
+
+playerMark : Player -> String
+playerMark player =
+    case player of
+        X ->
+            "X"
+
+        O ->
+            "O"
 
 
 gameStyle : Style
